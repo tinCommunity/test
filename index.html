@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tin SDK — документация</title>
+<meta name="description" content="Документация tin SDK: мост между приложением, открытым на tin.bar/<id>, и самим tin.bar.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f6f7f9;
+    --bg-code: #f3f4f7;
+    --text: #1b1d22;
+    --muted: #5d6370;
+    --border: #e3e6eb;
+    --accent: #3b5bdb;
+    --accent-soft: #edf1ff;
+    --warn: #b35c00;
+    --warn-soft: #fff4e5;
+    --tok-com: #7a808c;
+    --tok-str: #2b8a3e;
+    --tok-kw: #a61e4d;
+    --tok-num: #c2410c;
+    --tok-fn: #3b5bdb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121418;
+      --bg-soft: #1a1d23;
+      --bg-code: #1d2027;
+      --text: #e6e8ec;
+      --muted: #9aa1ad;
+      --border: #2c3039;
+      --accent: #8ea4ff;
+      --accent-soft: #1f2640;
+      --warn: #ffb35c;
+      --warn-soft: #2e2416;
+      --tok-com: #7d8494;
+      --tok-str: #8ce99a;
+      --tok-kw: #f783ac;
+      --tok-num: #ffa94d;
+      --tok-fn: #91a7ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121418;
+    --bg-soft: #1a1d23;
+    --bg-code: #1d2027;
+    --text: #e6e8ec;
+    --muted: #9aa1ad;
+    --border: #2c3039;
+    --accent: #8ea4ff;
+    --accent-soft: #1f2640;
+    --warn: #ffb35c;
+    --warn-soft: #2e2416;
+    --tok-com: #7d8494;
+    --tok-str: #8ce99a;
+    --tok-kw: #f783ac;
+    --tok-num: #ffa94d;
+    --tok-fn: #91a7ff;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header.top {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 12px;
+    height: 56px; padding: 0 16px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { font-weight: 700; font-size: 17px; color: var(--text); }
+  .brand span { color: var(--muted); font-weight: 500; }
+  .top .spacer { flex: 1; }
+  .badge {
+    font-size: 12px; padding: 2px 8px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); font-weight: 600;
+  }
+  .icon-btn {
+    border: 1px solid var(--border); background: var(--bg-soft); color: var(--text);
+    border-radius: 8px; height: 32px; min-width: 32px; padding: 0 8px; cursor: pointer; font: inherit; font-size: 14px;
+  }
+  #menu-btn { display: none; }
+
+  .layout { display: flex; max-width: 1180px; margin: 0 auto; }
+  nav.side {
+    position: sticky; top: 56px; align-self: flex-start;
+    width: 250px; flex: none; height: calc(100vh - 56px); overflow-y: auto;
+    padding: 24px 16px 40px; border-right: 1px solid var(--border);
+    font-size: 14px;
+  }
+  nav.side .group { margin: 18px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  nav.side .group:first-child { margin-top: 0; }
+  nav.side a { display: block; padding: 4px 10px; border-radius: 6px; color: var(--text); }
+  nav.side a:hover { background: var(--bg-soft); text-decoration: none; }
+  nav.side a.active { background: var(--accent-soft); color: var(--accent); }
+  nav.side a code { font-size: 13px; background: none; padding: 0; }
+
+  main { flex: 1; min-width: 0; padding: 32px 40px 80px; }
+  main > section { max-width: 780px; }
+  h1 { font-size: 34px; line-height: 1.2; margin: 0 0 12px; }
+  h2 { font-size: 24px; margin: 56px 0 12px; padding-top: 8px; border-top: 1px solid var(--border); padding-top: 32px; }
+  h3 { font-size: 18px; margin: 32px 0 8px; }
+  h3 code { font-size: 17px; }
+  .lead { font-size: 18px; color: var(--muted); margin: 0 0 24px; }
+  p, li { max-width: 72ch; }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--bg-code); padding: 1px 5px; border-radius: 4px;
+  }
+  pre {
+    position: relative; margin: 14px 0 20px;
+    background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  pre .copy {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 12px; padding: 3px 8px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--muted); cursor: pointer;
+    opacity: 0; transition: opacity .15s;
+  }
+  pre:hover .copy, pre .copy:focus { opacity: 1; }
+  @media (hover: none) { pre .copy { opacity: 1; } }
+  .tok-com { color: var(--tok-com); font-style: italic; }
+  .tok-str { color: var(--tok-str); }
+  .tok-kw { color: var(--tok-kw); }
+  .tok-num { color: var(--tok-num); }
+  .tok-fn { color: var(--tok-fn); }
+
+  .sig {
+    display: block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 14px; background: var(--accent-soft); color: var(--text);
+    border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 8px 8px 0; margin: 8px 0 12px;
+    overflow-x: auto; white-space: nowrap;
+  }
+
+  .note, .warn {
+    border-radius: 10px; padding: 12px 16px; margin: 16px 0; font-size: 15px;
+    border: 1px solid var(--border);
+  }
+  .note { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+  .warn { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+  .note strong, .warn strong { display: block; margin-bottom: 2px; }
+  .warn strong { color: var(--warn); }
+  .note p, .warn p { margin: 4px 0; }
+
+  .table-wrap { overflow-x: auto; margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; background: var(--bg-soft); }
+  td code { white-space: nowrap; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin: 20px 0; }
+  .card { border: 1px solid var(--border); border-radius: 10px; padding: 14px; background: var(--bg-soft); color: var(--text); }
+  .card:hover { border-color: var(--accent); text-decoration: none; }
+  .card b { display: block; margin-bottom: 4px; }
+  .card span { font-size: 14px; color: var(--muted); }
+
+  .flow { display: grid; gap: 8px; margin: 16px 0; counter-reset: step; padding: 0; list-style: none; }
+  .flow li { position: relative; padding: 10px 12px 10px 46px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-soft); max-width: none; }
+  .flow li::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: 12px; top: 10px; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: var(--bg); font-size: 13px; font-weight: 700;
+    display: grid; place-items: center;
+  }
+
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; max-width: 780px; }
+
+  @media (max-width: 860px) {
+    #menu-btn { display: inline-block; }
+    nav.side {
+      position: fixed; top: 56px; left: 0; z-index: 9; background: var(--bg);
+      transform: translateX(-100%); transition: transform .2s;
+    }
+    body.menu-open nav.side { transform: none; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+    main { padding: 24px 16px 64px; }
+    h1 { font-size: 28px; }
+    h2 { font-size: 21px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <button class="icon-btn" id="menu-btn" aria-label="Меню">☰</button>
+  <a class="brand" href="#top">tin SDK <span>docs</span></a>
+  <span class="badge">v1</span>
+  <span class="spacer"></span>
+  <button class="icon-btn" id="theme-btn" aria-label="Сменить тему" title="Сменить тему">◐</button>
+</header>
+
+<div class="layout">
+  <nav class="side" id="nav">
+    <div class="group">Начало</div>
+    <a href="#top">Обзор</a>
+    <a href="#install">Подключение</a>
+    <a href="#quickstart">Быстрый старт</a>
+
+    <div class="group">API</div>
+    <a href="#props">Свойства</a>
+    <a href="#init"><code>Tin.init()</code></a>
+    <a href="#on"><code>Tin.on()</code></a>
+    <a href="#login"><code>Tin.login()</code></a>
+    <a href="#token"><code>Tin.token()</code></a>
+    <a href="#openapp"><code>Tin.openApp()</code></a>
+
+    <div class="group">Руководства</div>
+    <a href="#events">События</a>
+    <a href="#backend">Авторизация на бэкенде</a>
+    <a href="#history">Ссылки и «назад»</a>
+    <a href="#errors">Ошибки</a>
+
+    <div class="group">Справка</div>
+    <a href="#protocol">Протокол postMessage</a>
+    <a href="#security">Безопасность</a>
+    <a href="#faq">Частые вопросы</a>
+  </nav>
+
+  <main>
+    <section id="top">
+      <h1>tin SDK</h1>
+      <p class="lead">Мост между приложением, открытым на <code>https://tin.bar/&lt;id&gt;</code>, и самим tin.bar. Один скрипт без зависимостей: пользователь, тема, язык, вход через кошелёк, токен для бэкенда и общая история браузера.</p>
+
+      <div class="cards">
+        <a class="card" href="#quickstart"><b>Быстрый старт</b><span>Подключить SDK и получить пользователя за пять строк.</span></a>
+        <a class="card" href="#backend"><b>Бэкенд</b><span>Как безопасно узнать, кто пользователь, на своём сервере.</span></a>
+        <a class="card" href="#history"><b>Ссылки и «назад»</b><span>Как страницы приложения попадают в адрес и историю tin.bar.</span></a>
+      </div>
+
+      <p>Приложение tin.bar открывает в <code>&lt;iframe&gt;</code>. SDK общается с родительским окном через <code>window.postMessage</code> и даёт приложению:</p>
+      <ul>
+        <li><strong>контекст</strong> — приложение, пользователь (или гость), тема и язык интерфейса tin.bar;</li>
+        <li><strong>события</strong> — когда пользователь входит/выходит, меняет тему или язык;</li>
+        <li><strong>вход</strong> — просьба к tin.bar открыть вход через кошелёк;</li>
+        <li><strong>токен</strong> — короткоживущий токен, по которому ваш бэкенд проверяет пользователя;</li>
+        <li><strong>навигацию</strong> — страницы приложения становятся частью адреса tin.bar, кнопки «назад» и «вперёд» работают без единой строчки кода.</li>
+      </ul>
+    </section>
+
+    <section id="install">
+      <h2>Подключение</h2>
+      <p>Подключите скрипт с tin.bar на <strong>каждой</strong> странице приложения:</p>
+<pre><code class="lang-html">&lt;script src="https://tin.bar/sdk/tin.js"&gt;&lt;/script&gt;</code></pre>
+      <p>После загрузки появляется глобальный объект <code>window.Tin</code>. Повторное подключение (например, два тега <code>&lt;script&gt;</code>) безопасно: остаётся первая копия.</p>
+      <div class="warn">
+        <strong>Загружайте SDK именно с tin.bar</strong>
+        <p>SDK общается только с тем origin, с которого он загружен (<code>Tin.hostOrigin</code>). Если положить копию <code>tin.js</code> на свой домен и подключить её через <code>src</code>, SDK будет ждать ответов от вашего домена и не подключится к tin.bar.</p>
+      </div>
+      <div class="note">
+        <strong>Локальная разработка tin.bar</strong>
+        <p>Если tin.bar запущен локально, подключайте SDK с dev-сервера — <code>Tin.hostOrigin</code> автоматически станет его origin.</p>
+      </div>
+    </section>
+
+    <section id="quickstart">
+      <h2>Быстрый старт</h2>
+<pre><code class="lang-js">&lt;script src="https://tin.bar/sdk/tin.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  Tin.init()
+    .then(({ app, user, theme, locale }) =&gt; {
+      // user: { id, name } или null для гостя
+      render(user)
+    })
+    .catch((error) =&gt; {
+      if (error.code === 'not_embedded') {
+        // Страница открыта не внутри tin.bar — например, напрямую по адресу хостинга
+      }
+    })
+
+  // Пользователь вошёл или вышел
+  const off = Tin.on('user', (user) =&gt; render(user))
+
+  document.querySelector('#login').onclick = () =&gt; Tin.login()
+&lt;/script&gt;</code></pre>
+      <p>Вне tin.bar (страница открыта напрямую, не во фрейме) <code>init()</code> отклоняется с кодом <code>not_embedded</code>, а навигация работает как обычно — приложение можно разрабатывать и открывать отдельно.</p>
+    </section>
+
+    <section id="props">
+      <h2>Свойства</h2>
+      <p>Свойства только для чтения. <code>app</code>, <code>user</code>, <code>theme</code> и <code>locale</code> равны <code>null</code>, пока <code>init()</code> не подключился, затем обновляются вместе с <a href="#events">событиями</a>.</p>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Свойство</th><th>Тип</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><code>Tin.version</code></td><td><code>number</code></td><td>Версия протокола, сейчас <code>1</code>.</td></tr>
+          <tr><td><code>Tin.isEmbedded</code></td><td><code>boolean</code></td><td><code>true</code>, если страница открыта во фрейме (так её открывает tin.bar).</td></tr>
+          <tr><td><code>Tin.hostOrigin</code></td><td><code>string</code></td><td>Origin tin.bar, например <code>https://tin.bar</code>. Ссылка на приложение: <code>Tin.hostOrigin + '/' + id</code>.</td></tr>
+          <tr><td><code>Tin.app</code></td><td><code>{ id } | null</code></td><td>Текущее приложение.</td></tr>
+          <tr><td><code>Tin.user</code></td><td><code>{ id, name } | null</code></td><td>Текущий пользователь; <code>null</code> — гость. Только для интерфейса, <a href="#backend">не для авторизации</a>.</td></tr>
+          <tr><td><code>Tin.theme</code></td><td>задаёт tin.bar</td><td>Текущая тема интерфейса tin.bar.</td></tr>
+          <tr><td><code>Tin.locale</code></td><td>задаёт tin.bar</td><td>Текущий язык интерфейса tin.bar.</td></tr>
+        </tbody>
+      </table>
+      </div>
+<pre><code class="lang-js">// Ссылка, которой можно поделиться
+const shareUrl = Tin.hostOrigin + '/' + Tin.app.id</code></pre>
+    </section>
+
+    <section id="init">
+      <h3><code>Tin.init()</code></h3>
+      <code class="sig">Tin.init(): Promise&lt;{ app, user, theme, locale }&gt;</code>
+      <p>Подключается к tin.bar и возвращает текущий контекст. После успешного вызова значения доступны и как <code>Tin.app</code>, <code>Tin.user</code>, <code>Tin.theme</code>, <code>Tin.locale</code>, а SDK начинает синхронизировать адрес и историю с tin.bar.</p>
+      <ul>
+        <li>Можно вызывать сколько угодно раз — все вызовы получат один и тот же промис.</li>
+        <li>Если вызов завершился ошибкой, следующий <code>init()</code> попробует подключиться заново.</li>
+        <li>Отклоняется с <code>not_embedded</code> вне tin.bar и с <code>timeout</code>, если tin.bar не ответил за 10 секунд.</li>
+      </ul>
+<pre><code class="lang-js">const { app, user, theme, locale } = await Tin.init()
+console.log(app.id, user ? user.name : 'гость')</code></pre>
+    </section>
+
+    <section id="on">
+      <h3><code>Tin.on(event, listener)</code></h3>
+      <code class="sig">Tin.on(event: 'user' | 'theme' | 'locale', listener: (data) =&gt; void): () =&gt; void</code>
+      <p>Подписывается на изменения. Возвращает функцию отписки. Перед вызовом слушателя SDK уже обновил соответствующее свойство (<code>Tin.user</code> и т.д.). Ошибка внутри слушателя не ломает остальных — она пишется в консоль.</p>
+      <p>Неизвестное имя события сразу бросает исключение с кодом <code>unknown_event</code>.</p>
+<pre><code class="lang-js">const unsubscribe = Tin.on('theme', (theme) =&gt; {
+  document.documentElement.dataset.theme = theme
+})
+
+// позже
+unsubscribe()</code></pre>
+      <div class="note"><strong>Совет</strong><p>Подписывайтесь до или сразу после <code>init()</code>: начальные значения приходят в результате <code>init()</code>, а события — только при последующих изменениях.</p></div>
+    </section>
+
+    <section id="login">
+      <h3><code>Tin.login()</code></h3>
+      <code class="sig">Tin.login(): Promise&lt;void&gt;</code>
+      <p>Просит tin.bar открыть вход через кошелёк. Промис разрешается, когда tin.bar принял просьбу, — <strong>не</strong> когда пользователь вошёл. Вошедший пользователь приходит в событии <code>'user'</code>.</p>
+<pre><code class="lang-js">Tin.on('user', (user) =&gt; {
+  if (user) showProfile(user)
+})
+
+loginButton.onclick = () =&gt; Tin.login()</code></pre>
+    </section>
+
+    <section id="token">
+      <h3><code>Tin.token()</code></h3>
+      <code class="sig">Tin.token(): Promise&lt;{ token, expiresAt }&gt;</code>
+      <p>Выдаёт короткоживущий токен, по которому ваш бэкенд узнаёт, кто пользователь. Для гостя отклоняется с кодом <code>unauthorized</code>. Подробнее — в разделе <a href="#backend">Авторизация на бэкенде</a>.</p>
+<pre><code class="lang-js">try {
+  const { token, expiresAt } = await Tin.token()
+  await fetch('https://your.backend/items', {
+    headers: { Authorization: 'Bearer ' + token },
+  })
+} catch (error) {
+  if (error.code === 'unauthorized') Tin.login()
+}</code></pre>
+    </section>
+
+    <section id="openapp">
+      <h3><code>Tin.openApp(id)</code></h3>
+      <code class="sig">Tin.openApp(id: string): Promise&lt;void&gt;</code>
+      <p>Открывает другое приложение на tin.bar по его id — то же, что перейти на <code>tin.bar/&lt;id&gt;</code>.</p>
+<pre><code class="lang-js">Tin.openApp('demo')   // откроет https://tin.bar/demo</code></pre>
+    </section>
+
+    <section id="events">
+      <h2>События</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Событие</th><th>Данные</th><th>Когда приходит</th></tr></thead>
+        <tbody>
+          <tr><td><code>'user'</code></td><td><code>{ id, name } | null</code></td><td>Пользователь вошёл, вышел или сменил аккаунт.</td></tr>
+          <tr><td><code>'theme'</code></td><td>новая тема</td><td>В tin.bar сменили тему.</td></tr>
+          <tr><td><code>'locale'</code></td><td>новый язык</td><td>В tin.bar сменили язык.</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p>После события <code>'user'</code> старый токен больше не соответствует пользователю — запросите новый через <code>Tin.token()</code>.</p>
+<pre><code class="lang-js">let token = null
+
+Tin.on('user', async (user) =&gt; {
+  token = user ? (await Tin.token()).token : null
+  render(user)
+})</code></pre>
+    </section>
+
+    <section id="backend">
+      <h2>Авторизация на бэкенде</h2>
+      <div class="warn">
+        <strong>Не доверяйте <code>Tin.user</code> на сервере</strong>
+        <p><code>Tin.user</code> приходит со страницы, а не с сервера. Используйте его для интерфейса, но никогда — для проверки прав. Для этого есть токен.</p>
+      </div>
+
+      <ol class="flow">
+        <li>Приложение получает токен: <code>await Tin.token()</code>.</li>
+        <li>Отправляет его своему бэкенду в заголовке <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+        <li>Бэкенд спрашивает tin.bar, чей это токен: <code>GET https://api.tin.bar/v1/apps/session</code>.</li>
+        <li>Бэкенд проверяет, что <code>app.id</code> — это id вашего приложения, и доверяет <code>user.id</code>.</li>
+      </ol>
+
+      <h3>Клиент</h3>
+<pre><code class="lang-js">const { token, expiresAt } = await Tin.token()   // 'unauthorized' для гостя
+fetch('https://your.backend/items', { headers: { Authorization: 'Bearer ' + token } })</code></pre>
+
+      <h3>Проверка токена</h3>
+<pre><code class="lang-http">GET https://api.tin.bar/v1/apps/session
+Authorization: Bearer &lt;token&gt;
+
+200 → { "app": { "id": "..." }, "user": { "id": "...", "name": "..." } }
+401 → токен недействителен или истёк</code></pre>
+
+      <h3>Пример: Node.js (Express)</h3>
+<pre><code class="lang-js">const express = require('express')
+const app = express()
+const APP_ID = 'my-app'   // id вашего приложения на tin.bar
+
+async function tinAuth(req, res, next) {
+  const header = req.get('Authorization') || ''
+  if (!header.startsWith('Bearer ')) return res.sendStatus(401)
+
+  const response = await fetch('https://api.tin.bar/v1/apps/session', {
+    headers: { Authorization: header },
+  })
+  if (response.status === 401) return res.sendStatus(401)
+  if (!response.ok) return res.sendStatus(502)
+
+  const session = await response.json()   // { app: { id }, user: { id, name } }
+  // Токен, выданный другому приложению, не должен работать в вашем
+  if (session.app.id !== APP_ID) return res.sendStatus(401)
+
+  req.user = session.user   // { id, name }
+  next()
+}
+
+app.get('/items', tinAuth, (req, res) =&gt; {
+  res.json(getItemsOf(req.user.id))
+})</code></pre>
+
+      <div class="note">
+        <strong>Срок жизни токена</strong>
+        <p>Токен короткоживущий — смотрите <code>expiresAt</code>. Когда он истёк, просто вызовите <code>Tin.token()</code> ещё раз. Новый токен нужен и после события <code>'user'</code>.</p>
+      </div>
+
+<pre><code class="lang-js">// Небольшой помощник: всегда свежий токен в запросе
+async function api(path, options = {}) {
+  const { token } = await Tin.token()
+  return fetch('https://your.backend' + path, {
+    ...options,
+    headers: { ...options.headers, Authorization: 'Bearer ' + token },
+  })
+}</code></pre>
+    </section>
+
+    <section id="history">
+      <h2>Ссылки и «назад»</h2>
+      <p>После того как <code>init()</code> подключился, страница приложения становится частью адреса tin.bar:</p>
+<pre><code class="lang-text">https://tin.bar/&lt;id&gt;/&lt;ваш путь&gt;?&lt;query&gt;#&lt;hash&gt;</code></pre>
+      <p>Открытие такой ссылки загружает именно эту страницу приложения — ей можно делиться.</p>
+
+      <h3>Как устроена история</h3>
+      <p>История принадлежит tin.bar: каждая новая страница приложения становится записью во вкладке tin.bar, а само приложение остаётся на одной записи. Поэтому:</p>
+      <ul>
+        <li>кнопки браузера «назад» и «вперёд» ходят по страницам приложения;</li>
+        <li>история переживает перезагрузку страницы;</li>
+        <li>«назад» на первой странице приложения уводит обратно в tin.bar.</li>
+      </ul>
+      <p><strong>Ничего вызывать не нужно</strong> — подключите SDK на каждой странице и вызовите <code>init()</code>. <code>history.back()</code>, <code>history.forward()</code> и <code>history.go()</code> продолжают работать: их выполняет tin.bar.</p>
+
+      <h3>Что SDK перехватывает</h3>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Действие в приложении</th><th>Что происходит</th></tr></thead>
+        <tbody>
+          <tr><td><code>history.pushState()</code></td><td>Превращается в <code>replaceState</code> во фрейме; tin.bar добавляет новую запись во вкладку.</td></tr>
+          <tr><td><code>history.replaceState()</code></td><td>Выполняется как обычно; tin.bar обновляет текущий адрес.</td></tr>
+          <tr><td><code>history.back() / forward() / go(n)</code></td><td>Выполняет tin.bar в своей вкладке.</td></tr>
+          <tr><td>Клик по ссылке на другую страницу того же сайта</td><td>Открывается как новая запись tin.bar.</td></tr>
+          <tr><td><code>location.assign()</code>, <code>location.hash = …</code>, <code>navigation.navigate()</code></td><td>Открывается как новая запись tin.bar, если браузер поддерживает Navigation API. Иначе выполняется нативно: запись принадлежит фрейму, а tin.bar только следит за адресом.</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>Что SDK не трогает</h3>
+      <ul>
+        <li>клики, которые приложение уже обработало (<code>event.preventDefault()</code>, например ссылки роутера);</li>
+        <li>клики с модификаторами (<kbd>Ctrl</kbd>, <kbd>⌘</kbd>, <kbd>Shift</kbd>, <kbd>Alt</kbd>) и не левой кнопкой;</li>
+        <li>ссылки с <code>target</code>, отличным от <code>_self</code>, и ссылки с атрибутом <code>download</code>;</li>
+        <li>ссылки на другие сайты;</li>
+        <li>отправку форм и загрузки файлов;</li>
+        <li>всё, что происходит до подключения <code>init()</code> и вне tin.bar.</li>
+      </ul>
+
+      <h3>Одностраничные приложения (SPA)</h3>
+      <p>Если приложение использует History API (React Router, Vue Router и т.п.), при переходе «назад»/«вперёд» в tin.bar SDK меняет адрес без перезагрузки и отправляет событие <code>popstate</code> — роутер отрисует нужную страницу сам. Многостраничные сайты при этом просто загружают нужную страницу.</p>
+    </section>
+
+    <section id="errors">
+      <h2>Ошибки</h2>
+      <p>Все промисы SDK отклоняются объектом <code>Error</code> с полем <code>code</code>. Сообщение начинается с <code>Tin: </code>.</p>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>code</th><th>Когда</th></tr></thead>
+        <tbody>
+          <tr><td><code>not_embedded</code></td><td>Страница открыта не внутри tin.bar (не во фрейме).</td></tr>
+          <tr><td><code>timeout</code></td><td>tin.bar не ответил на запрос за 10 секунд.</td></tr>
+          <tr><td><code>unauthorized</code></td><td><code>Tin.token()</code> вызван для гостя.</td></tr>
+          <tr><td><code>unknown_event</code></td><td><code>Tin.on()</code> с неизвестным именем события (бросается синхронно).</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p>Другие коды может вернуть сам tin.bar — они передаются в <code>error.code</code> и <code>error.message</code> без изменений.</p>
+<pre><code class="lang-js">try {
+  await Tin.init()
+} catch (error) {
+  switch (error.code) {
+    case 'not_embedded': showStandaloneMode(); break
+    case 'timeout':      showRetryButton();    break
+    default:             console.error(error)
+  }
+}</code></pre>
+    </section>
+
+    <section id="protocol">
+      <h2>Протокол postMessage</h2>
+      <p>Для тех, кто пишет свою реализацию или отлаживает обмен сообщениями. Все сообщения содержат <code>tin: 1</code> — версию протокола.</p>
+
+      <h3>Приложение → tin.bar</h3>
+<pre><code class="lang-js">{ tin: 1, id, method, params? }</code></pre>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>method</th><th>params</th><th>Назначение</th></tr></thead>
+        <tbody>
+          <tr><td><code>init</code></td><td><code>{ href }</code></td><td>Подключение; ответ — <code>{ app, user, theme, locale }</code>.</td></tr>
+          <tr><td><code>login</code></td><td>—</td><td>Открыть вход через кошелёк.</td></tr>
+          <tr><td><code>token</code></td><td>—</td><td>Выдать токен; ответ — <code>{ token, expiresAt }</code>.</td></tr>
+          <tr><td><code>open</code></td><td><code>{ id }</code></td><td>Открыть другое приложение.</td></tr>
+          <tr><td><code>location</code></td><td><code>{ href, replace }</code></td><td>Адрес фрейма изменился: новая запись (<code>replace: false</code>) или замена текущей.</td></tr>
+          <tr><td><code>go</code></td><td><code>{ delta }</code></td><td>Переход по истории вкладки tin.bar.</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>tin.bar → приложение</h3>
+<pre><code class="lang-js">{ tin: 1, id, result }                    // успешный ответ на запрос
+{ tin: 1, id, error: { code, message } }  // ошибка
+{ tin: 1, event, data }                   // событие</code></pre>
+      <p>События: <code>user</code>, <code>theme</code>, <code>locale</code> (публичные) и <code>navigate</code> (служебное, <code>data</code> — адрес, который нужно показать во фрейме без новой записи в истории).</p>
+    </section>
+
+    <section id="security">
+      <h2>Безопасность</h2>
+      <ul>
+        <li>SDK отправляет сообщения только на <code>Tin.hostOrigin</code> и принимает их только от родительского окна с этим origin. Сайт, который просто встроил ваше приложение во фрейм, ничего не получит.</li>
+        <li><code>Tin.user</code> — данные для интерфейса. Права проверяйте на бэкенде по токену.</li>
+        <li>На бэкенде всегда сверяйте <code>app.id</code> из ответа <code>/v1/apps/session</code> с id своего приложения.</li>
+        <li>Не храните токен долго: он короткоживущий, запрашивайте новый по мере необходимости.</li>
+      </ul>
+    </section>
+
+    <section id="faq">
+      <h2>Частые вопросы</h2>
+      <h3>Можно ли открыть приложение без tin.bar?</h3>
+      <p>Да. Вне фрейма <code>init()</code> отклонится с <code>not_embedded</code>, а навигация и история работают как на обычном сайте. Удобно для разработки.</p>
+      <h3>Нужно ли вызывать <code>init()</code> на каждой странице?</h3>
+      <p>Да, если сайт многостраничный: подключите SDK и вызовите <code>init()</code> на каждой странице — иначе её адрес не попадёт в tin.bar. В SPA достаточно одного вызова при старте.</p>
+      <h3>Почему «назад» ничего не делает?</h3>
+      <p>Скорее всего, запись в истории была создана до подключения <code>init()</code> или браузер не поддерживает Navigation API: такие записи принадлежат фрейму и пропадают при его перезагрузке. Вызывайте <code>init()</code> как можно раньше.</p>
+      <h3>Как сделать ссылку на страницу приложения?</h3>
+      <p><code>Tin.hostOrigin + '/' + Tin.app.id + '/путь'</code>. Внутри приложения используйте обычные относительные ссылки — SDK сам превратит их в записи истории tin.bar.</p>
+    </section>
+
+    <footer>tin SDK · протокол версии 1 · <code>https://tin.bar/sdk/tin.js</code></footer>
+  </main>
+</div>
+
+<script>
+  // Простая подсветка синтаксиса
+  ;(function () {
+    var KW = /^(const|let|var|function|return|if|else|await|async|try|catch|throw|new|switch|case|break|default|typeof|null|true|false|undefined)$/
+    var TOKEN = /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|(\b\d+\b)|([A-Za-z_$][\w$]*)(?=\s*\()|([A-Za-z_$][\w$]*)/g
+    function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+    document.querySelectorAll('pre code.lang-js, pre code.lang-http').forEach(function (el) {
+      var src = el.textContent, out = '', last = 0, m
+      TOKEN.lastIndex = 0
+      while ((m = TOKEN.exec(src))) {
+        out += esc(src.slice(last, m.index))
+        var t = esc(m[0])
+        if (m[1]) out += '<span class="tok-com">' + t + '</span>'
+        else if (m[2]) out += '<span class="tok-str">' + t + '</span>'
+        else if (m[3]) out += '<span class="tok-num">' + t + '</span>'
+        else if (m[4]) out += KW.test(m[4]) ? '<span class="tok-kw">' + t + '</span>' : '<span class="tok-fn">' + t + '</span>'
+        else out += KW.test(m[5]) ? '<span class="tok-kw">' + t + '</span>' : t
+        last = TOKEN.lastIndex
+      }
+      el.innerHTML = out + esc(src.slice(last))
+    })
+  })()
+
+  // Кнопки «Копировать»
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var btn = document.createElement('button')
+    btn.className = 'copy'
+    btn.type = 'button'
+    btn.textContent = 'Копировать'
+    btn.onclick = function () {
+      var text = pre.querySelector('code').textContent
+      var done = function () { btn.textContent = 'Скопировано'; setTimeout(function () { btn.textContent = 'Копировать' }, 1500) }
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () {})
+    }
+    pre.appendChild(btn)
+  })
+
+  // Тема
+  ;(function () {
+    var root = document.documentElement
+    try { var saved = localStorage.getItem('tin-docs-theme'); if (saved) root.dataset.theme = saved } catch (e) {}
+    document.getElementById('theme-btn').onclick = function () {
+      var dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+      root.dataset.theme = dark ? 'light' : 'dark'
+      try { localStorage.setItem('tin-docs-theme', root.dataset.theme) } catch (e) {}
+    }
+  })()
+
+  // Мобильное меню
+  document.getElementById('menu-btn').onclick = function () { document.body.classList.toggle('menu-open') }
+  document.querySelectorAll('#nav a').forEach(function (a) {
+    a.addEventListener('click', function () { document.body.classList.remove('menu-open') })
+  })
+
+  // Подсветка текущего раздела в меню
+  ;(function () {
+    var links = {}
+    document.querySelectorAll('#nav a').forEach(function (a) { links[a.getAttribute('href').slice(1)] = a })
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting || !links[e.target.id]) return
+        Object.keys(links).forEach(function (k) { links[k].classList.remove('active') })
+        links[e.target.id].classList.add('active')
+      })
+    }, { rootMargin: '-60px 0px -70% 0px' })
+    document.querySelectorAll('main section[id]').forEach(function (s) { observer.observe(s) })
+  })()
+</script>
+</body>
+</html>
