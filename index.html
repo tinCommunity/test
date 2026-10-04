@@ -22,8 +22,9 @@
     --tok-kw: #a61e4d;
     --tok-num: #c2410c;
     --tok-fn: #3b5bdb;
-    /* На tin.bar его кнопки висят над страницей: шапка начинается под ними (Tin.contentSafeAreaInset). */
-    --header-h: calc(56px + var(--tin-content-safe-area-inset-top, 0px));
+    /* Шапка. На tin.bar она стоит в полосе его кнопок: высотой с полосу и по центру кнопок (Tin.controlsRect).
+       Без tin.bar — обычные 56px. Старый tin.bar не говорит, где кнопки, — тогда шапка под полосой. */
+    --header-h: calc(var(--tin-controls-top, 28px) + var(--tin-controls-bottom, calc(28px + var(--tin-content-safe-area-inset-top, 0px))));
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -76,14 +77,23 @@
   header.top {
     position: sticky; top: 0; z-index: 10;
     display: flex; align-items: center; gap: 12px;
-    height: var(--header-h); padding: var(--tin-content-safe-area-inset-top, 0px) 16px 0;
+    height: var(--header-h);
+    /* Сверху — полоса, если шапка под ней; справа — до кнопок tin.bar с зазором в 12px */
+    padding: max(0px, var(--header-h) - 56px) max(16px, calc(100% - var(--tin-controls-left, 100%) + 12px)) 0 16px;
+    container-type: inline-size;
     background: color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--border);
   }
-  .brand { font-weight: 700; font-size: 17px; color: var(--text); }
+  .brand {
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-weight: 700; font-size: 17px; color: var(--text);
+  }
   .brand span { color: var(--muted); font-weight: 500; }
-  .top .spacer { flex: 1; }
+  .top .icon-btn, .badge { flex: none; }
+  /* Рядом с кнопками tin.bar на узком телефоне места мало: сначала уходит версия, потом «docs» */
+  @container (width < 232px) { .badge { display: none; } }
+  @container (width < 190px) { .brand span { display: none; } }
   .badge {
     font-size: 12px; padding: 2px 8px; border-radius: 999px;
     background: var(--accent-soft); color: var(--accent); font-weight: 600;
@@ -200,7 +210,7 @@
   <button class="icon-btn" id="menu-btn" aria-label="Меню">☰</button>
   <a class="brand" href="#top">tin SDK <span>docs</span></a>
   <span class="badge">v1</span>
-  <span class="spacer"></span>
+  <!-- Слева: справа на tin.bar его кнопки -->
   <button class="icon-btn" id="theme-btn" aria-label="Сменить тему" title="Сменить тему">◐</button>
 </header>
 
@@ -301,7 +311,7 @@
 
     <section id="props">
       <h2>Свойства</h2>
-      <p>Свойства только для чтения. <code>app</code>, <code>user</code>, <code>theme</code> и <code>locale</code> равны <code>null</code>, <code>initData</code> — пустой строке, а <code>contentSafeAreaInset</code> — нулям, пока <code>init()</code> не подключился. Затем они обновляются вместе с <a href="#events">событиями</a>.</p>
+      <p>Свойства только для чтения. <code>app</code>, <code>user</code>, <code>theme</code> и <code>locale</code> равны <code>null</code>, <code>initData</code> — пустой строке, <code>contentSafeAreaInset</code> — нулям, а <code>controlsRect</code> — <code>null</code>, пока <code>init()</code> не подключился. Затем они обновляются вместе с <a href="#events">событиями</a>.</p>
       <div class="table-wrap">
       <table>
         <thead><tr><th>Свойство</th><th>Тип</th><th>Описание</th></tr></thead>
@@ -314,10 +324,11 @@
           <tr><td><code>Tin.theme</code></td><td>задаёт tin.bar</td><td>Текущая тема интерфейса tin.bar.</td></tr>
           <tr><td><code>Tin.locale</code></td><td>задаёт tin.bar</td><td>Текущий язык интерфейса tin.bar.</td></tr>
           <tr><td><code>Tin.initData</code></td><td><code>string</code></td><td>Пользователь и время, подписанные ключом приложения, — для <a href="#backend">бэкенда</a>. <code>''</code> — гость или подпись ещё не готова.</td></tr>
-          <tr><td><code>Tin.features</code></td><td><code>string[]</code></td><td>Что умеет загруженная копия SDK: <code>'init'</code>, <code>'login'</code>, <code>'openApp'</code>, <code>'history'</code>, <code>'initData'</code>, <code>'historyState'</code>, <code>'canGoBack'</code>, <code>'startParam'</code>, <code>'contentSafeAreaInset'</code>, <code>'reload'</code>. У старой закешированной копии новых возможностей (или всего списка) нет.</td></tr>
+          <tr><td><code>Tin.features</code></td><td><code>string[]</code></td><td>Что умеет загруженная копия SDK: <code>'init'</code>, <code>'login'</code>, <code>'openApp'</code>, <code>'history'</code>, <code>'initData'</code>, <code>'historyState'</code>, <code>'canGoBack'</code>, <code>'startParam'</code>, <code>'contentSafeAreaInset'</code>, <code>'reload'</code>, <code>'controlsRect'</code>. У старой закешированной копии новых возможностей (или всего списка) нет.</td></tr>
           <tr><td><code>Tin.startParam</code></td><td><code>string | null</code></td><td>Параметр <a href="#startapp">startapp</a> ссылки, которой открыли приложение. Подписан и в initData.</td></tr>
           <tr><td><code>Tin.canGoBack</code></td><td><code>boolean</code></td><td>«Назад» останется в приложении: предыдущая запись вкладки — его же страница. По нему удобно показывать свою кнопку «назад».</td></tr>
           <tr><td><code>Tin.contentSafeAreaInset</code></td><td><code>{ top, right, bottom, left }</code></td><td>Сколько от каждого края фрейма занимают <a href="#safe-area">кнопки tin.bar</a>, в CSS-пикселях. То же — в CSS-переменных <code>--tin-content-safe-area-inset-*</code>.</td></tr>
+          <tr><td><code>Tin.controlsRect</code></td><td><code>{ top, right, bottom, left, width, height } | null</code></td><td>Где сами <a href="#controls-rect">кнопки tin.bar</a>: координаты во фрейме, как у <code>getBoundingClientRect()</code>. По нему шапку приложения можно поставить рядом с кнопками. То же — в CSS-переменных <code>--tin-controls-*</code>; <code>null</code> — кнопок нет.</td></tr>
           <tr><td><code>Tin.isConnected</code></td><td><code>boolean</code></td><td><code>true</code>, когда <code>init()</code> подключился к tin.bar.</td></tr>
         </tbody>
       </table>
@@ -328,8 +339,8 @@ const shareUrl = Tin.hostOrigin + '/' + Tin.app.id</code></pre>
 
     <section id="init">
       <h3><code>Tin.init()</code></h3>
-      <code class="sig">Tin.init(): Promise&lt;{ app, user, theme, locale, initData, startParam, canGoBack, contentSafeAreaInset }&gt;</code>
-      <p>Подключается к tin.bar и возвращает текущий контекст. После успешного вызова значения доступны и как <code>Tin.app</code>, <code>Tin.user</code>, <code>Tin.theme</code>, <code>Tin.locale</code>, <code>Tin.initData</code>, <code>Tin.contentSafeAreaInset</code> и т.д., на <code>&lt;html&gt;</code> появляются CSS-переменные <code>--tin-content-safe-area-inset-*</code>, а SDK начинает синхронизировать адрес и историю с tin.bar.</p>
+      <code class="sig">Tin.init(): Promise&lt;{ app, user, theme, locale, initData, startParam, canGoBack, contentSafeAreaInset, controlsRect }&gt;</code>
+      <p>Подключается к tin.bar и возвращает текущий контекст. После успешного вызова значения доступны и как <code>Tin.app</code>, <code>Tin.user</code>, <code>Tin.theme</code>, <code>Tin.locale</code>, <code>Tin.initData</code>, <code>Tin.contentSafeAreaInset</code> и т.д., на <code>&lt;html&gt;</code> появляются CSS-переменные <code>--tin-content-safe-area-inset-*</code> и <code>--tin-controls-*</code>, а SDK начинает синхронизировать адрес и историю с tin.bar.</p>
       <ul>
         <li>Можно вызывать сколько угодно раз: подключение одно, а каждый вызов получает копию текущего контекста.</li>
         <li>Если вызов завершился ошибкой, следующий <code>init()</code> попробует подключиться заново.</li>
@@ -341,7 +352,7 @@ console.log(app.id, user ? user.name : 'гость')</code></pre>
 
     <section id="on">
       <h3><code>Tin.on(event, listener)</code></h3>
-      <code class="sig">Tin.on(event: 'user' | 'theme' | 'locale' | 'initData' | 'canGoBack' | 'contentSafeAreaInset', listener: (data) =&gt; void): () =&gt; void</code>
+      <code class="sig">Tin.on(event: 'user' | 'theme' | 'locale' | 'initData' | 'canGoBack' | 'contentSafeAreaInset' | 'controlsRect', listener: (data) =&gt; void): () =&gt; void</code>
       <p>Подписывается на изменения. Возвращает функцию отписки. Перед вызовом слушателя SDK уже обновил соответствующее свойство (<code>Tin.user</code> и т.д.). Ошибка внутри слушателя не ломает остальных — она пишется в консоль.</p>
       <p>Неизвестное имя события сразу бросает исключение с кодом <code>unknown_event</code>.</p>
 <pre><code class="lang-js">const unsubscribe = Tin.on('theme', (theme) =&gt; {
@@ -427,6 +438,7 @@ reloadButton.onclick = () =&gt; location.reload()   // обычная перез
           <tr><td><code>'initData'</code></td><td><code>string</code></td><td>tin.bar подписал initData заново (раз в 10 минут), для нового пользователя (перед <code>'user'</code>) или после сбоя подписи.</td></tr>
           <tr><td><code>'canGoBack'</code></td><td><code>boolean</code></td><td>Изменилось, останется ли «назад» в приложении.</td></tr>
           <tr><td><code>'contentSafeAreaInset'</code></td><td><code>{ top, right, bottom, left }</code></td><td>Изменилось место под <a href="#safe-area">кнопками tin.bar</a>: интерфейс tin.bar масштабируется вместе с шириной окна. CSS-переменные SDK уже обновил.</td></tr>
+          <tr><td><code>'controlsRect'</code></td><td><code>{ top, right, bottom, left, width, height } | null</code></td><td>Кнопки tin.bar сдвинулись или изменили размер: ширина окна, масштаб интерфейса, поворот экрана. Смена только высоты окна (клавиатура на телефоне) его не вызывает: кнопки прижаты к верху.</td></tr>
         </tbody>
       </table>
       </div>
@@ -611,7 +623,7 @@ backButton.onclick = () =&gt; history.back()</code></pre>
     <section id="safe-area">
       <h2>Кнопки tin.bar</h2>
       <p>Экран целиком отдан приложению: полосы с заголовком над ним нет. Свои кнопки tin.bar кладёт поверх приложения — капсулой в правом верхнем углу, как у мини-приложений Telegram и WeChat: «Ещё», «Свернуть» и «Закрыть». Они видны и пока приложение загружается, так что зависшее приложение всегда можно закрыть.</p>
-      <p><code>Tin.contentSafeAreaInset</code> — <code>{ top, right, bottom, left }</code> в CSS-пикселях — говорит, как далеко от каждого края фрейма заходят кнопки. Сейчас это полоса сверху: <code>top</code> — её высота, кнопки стоят по её центру у правого края, остальные стороны равны <code>0</code>. Фон или картинка могут уходить под полосу, а то, что нужно читать или нажимать, держите ниже.</p>
+      <p><code>Tin.contentSafeAreaInset</code> — <code>{ top, right, bottom, left }</code> в CSS-пикселях — говорит, как далеко от каждого края фрейма заходят кнопки. Сейчас это полоса сверху: <code>top</code> — её высота, кнопки стоят по её центру у правого края, остальные стороны равны <code>0</code>. Фон или картинка могут уходить под полосу, а то, что нужно читать или нажимать, держите ниже — или рядом с кнопками, <a href="#controls-rect">по <code>Tin.controlsRect</code></a>.</p>
 
       <h3>CSS-переменные</h3>
       <p>Проще всего — переменные, которые SDK ставит на <code>&lt;html&gt;</code>: <code>--tin-content-safe-area-inset-top</code>, <code>-right</code>, <code>-bottom</code> и <code>-left</code>. Они появляются, когда <code>init()</code> подключился, и обновляются сами. Вне tin.bar их нет — указывайте запасное значение.</p>
@@ -630,6 +642,37 @@ header.top {
 }
 Tin.init().then(({ contentSafeAreaInset }) =&gt; layout(contentSafeAreaInset))
 Tin.on('contentSafeAreaInset', layout)   // tin.bar сменил размер интерфейса</code></pre>
+
+      <h3 id="controls-rect">Шапка рядом с кнопками</h3>
+      <p>Шапку приложения можно поставить прямо в полосу — рядом с кнопками tin.bar и на одной линии с ними, как у мини-приложений WeChat. Где сами кнопки, говорит <code>Tin.controlsRect</code> — как <code>wx.getMenuButtonBoundingClientRect()</code> в WeChat:</p>
+      <ul>
+        <li><code>{ top, right, bottom, left, width, height }</code> в CSS-пикселях от левого верхнего угла фрейма, как у <code>getBoundingClientRect()</code>: <code>right</code> и <code>bottom</code> — тоже координаты, а не отступы от краёв;</li>
+        <li>значения округлены наружу до целых пикселей: прямоугольник накрывает кнопки целиком;</li>
+        <li><code>null</code> — tin.bar не показывает кнопки поверх приложения, или это старый tin.bar;</li>
+        <li>пока прямоугольник есть, те же значения лежат в CSS-переменных <code>--tin-controls-top</code>, <code>-right</code>, <code>-bottom</code>, <code>-left</code>, <code>-width</code> и <code>-height</code>.</li>
+      </ul>
+      <p>Кнопки стоят по центру полосы, поэтому шапка высотой <code>top + bottom</code> с содержимым по центру оказывается с ними на одной линии. <code>100% - left</code> — сколько места справа занимают кнопки. Запасные значения в <code>var()</code> дают обычную шапку там, где кнопок нет:</p>
+<pre><code class="lang-css">header {
+  display: flex;
+  align-items: center;
+  /* Высотой с полосу и по центру кнопок; без tin.bar — 56px */
+  height: calc(var(--tin-controls-top, 28px) + var(--tin-controls-bottom, 28px));
+  /* Справа — до кнопок с зазором в 12px; без tin.bar — обычные 16px.
+     Проценты в padding считаются от ширины родителя: шапка — во всю ширину страницы */
+  padding: 0 max(16px, calc(100% - var(--tin-controls-left, 100%) + 12px)) 0 16px;
+}</code></pre>
+      <p>Так сделана эта страница: на tin.bar её шапка стоит рядом с кнопками, а переключатель темы — слева. Из JavaScript:</p>
+<pre><code class="lang-js">const { controlsRect } = await Tin.init()
+// { top: 8, right: 1272, bottom: 42, left: 1154, width: 118, height: 34 } или null
+
+// Старая копия SDK этого события не знает: Tin.on() бросил бы unknown_event
+if (Tin.features &amp;&amp; Tin.features.includes('controlsRect')) {
+  Tin.on('controlsRect', (rect) =&gt; layoutHeader(rect))   // кнопки сдвинулись
+}</code></pre>
+      <div class="note">
+        <strong>Координаты, а не отступы от краёв</strong>
+        <p>Кнопки прижаты к верху, поэтому смена высоты окна (клавиатура на телефоне) <code>controlsRect</code> не меняет. Ширина окна меняет <code>left</code> и <code>right</code> — tin.bar сообщает об этом событием, а CSS-переменные SDK обновляет сам.</p>
+      </div>
 
       <h3>Меню, «Свернуть» и «Закрыть»</h3>
       <ul>
@@ -707,7 +750,7 @@ Tin.on('contentSafeAreaInset', layout)   // tin.bar сменил размер и
       <table>
         <thead><tr><th>method</th><th>params</th><th>Назначение</th></tr></thead>
         <tbody>
-          <tr><td><code>init</code></td><td><code>{ href, state? }</code></td><td>Подключение; <code>state</code> — что приложение уже хранит в записи страницы. Ответ — <code>{ app, user, theme, locale, initData, startParam, canGoBack, contentSafeAreaInset }</code> и служебное <code>navigating: true</code>, если сразу за ним придёт <code>navigate</code> (пользователь прошёл по истории, пока приложение грузилось).</td></tr>
+          <tr><td><code>init</code></td><td><code>{ href, state? }</code></td><td>Подключение; <code>state</code> — что приложение уже хранит в записи страницы. Ответ — <code>{ app, user, theme, locale, initData, startParam, canGoBack, contentSafeAreaInset, controlsRect }</code> и служебное <code>navigating: true</code>, если сразу за ним придёт <code>navigate</code> (пользователь прошёл по истории, пока приложение грузилось).</td></tr>
           <tr><td><code>login</code></td><td>—</td><td>Открыть вход через кошелёк.</td></tr>
           <tr><td><code>open</code></td><td><code>{ id }</code></td><td>Открыть другое приложение.</td></tr>
           <tr><td><code>location</code></td><td><code>{ href, replace, state?, load? }</code></td><td>Адрес фрейма изменился: новая запись (<code>replace: false</code>) или замена текущей. <code>state</code> — состояние записи после <code>pushState</code>/<code>replaceState</code>. <code>load: true</code> — приложение начало загружать страницу по ссылке: tin.bar добавит запись, когда страница придёт (её <code>init</code> или <code>location</code> с этим адресом). Уходить со страницы стоит после ответа на это сообщение: сообщение от страницы, которой уже нет, приходит без <code>event.source</code>, и tin.bar его не примет.</td></tr>
@@ -721,7 +764,7 @@ Tin.on('contentSafeAreaInset', layout)   // tin.bar сменил размер и
 <pre><code class="lang-js">{ tin: 1, id, result }                    // успешный ответ на запрос
 { tin: 1, id, error: { code, message } }  // ошибка
 { tin: 1, event, data }                   // событие</code></pre>
-      <p>События: <code>user</code>, <code>theme</code>, <code>locale</code>, <code>initData</code> (новая подпись приходит перед <code>user</code>), <code>canGoBack</code>, <code>contentSafeAreaInset</code> и служебные:</p>
+      <p>События: <code>user</code>, <code>theme</code>, <code>locale</code>, <code>initData</code> (новая подпись приходит перед <code>user</code>), <code>canGoBack</code>, <code>contentSafeAreaInset</code>, <code>controlsRect</code> (эти два приходят и сразу на <code>init</code>, до ответа: страница не сдвигается после показа) и служебные:</p>
       <ul>
         <li><code>navigate</code>: <code>data</code> — адрес, который нужно показать во фрейме без новой записи в истории, <code>state</code> — что приложение хранило в этой записи;</li>
         <li><code>reload</code>: пользователь выбрал «Обновить» или «Обновить кэш», <code>data</code> — <code>{ refreshCache }</code>. От старого tin.bar приходит <code>null</code>: его единственное обновление шло мимо кеша.</li>
@@ -749,7 +792,7 @@ Tin.on('contentSafeAreaInset', layout)   // tin.bar сменил размер и
       <h3>После деплоя приложение показывает старую версию</h3>
       <p>Браузер взял страницу или её скрипты из кеша. Пункт «Обновить кэш» в меню tin.bar (или <code>Tin.reload()</code>) загрузит их с сервера, а заголовки из раздела <a href="#cache">Обновление и кеш</a> избавят от этого насовсем.</p>
       <h3>Что-то в приложении закрыто кнопками tin.bar</h3>
-      <p>Кнопки висят поверх приложения. Оставьте под ними место: <code>padding-top: var(--tin-content-safe-area-inset-top, 0px)</code> — подробнее в разделе <a href="#safe-area">Кнопки tin.bar</a>.</p>
+      <p>Кнопки висят поверх приложения. Оставьте под ними место: <code>padding-top: var(--tin-content-safe-area-inset-top, 0px)</code> — или поставьте шапку рядом с ними по <code>Tin.controlsRect</code>. Подробнее — в разделе <a href="#safe-area">Кнопки tin.bar</a>.</p>
       <h3>Как сделать ссылку на страницу приложения?</h3>
       <p><code>Tin.hostOrigin + '/' + Tin.app.id + '/путь'</code>. Внутри приложения используйте обычные относительные ссылки — SDK сам превратит их в записи истории tin.bar.</p>
     </section>
