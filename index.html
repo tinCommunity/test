@@ -511,6 +511,7 @@ def verify_init_data(init_data: str, app_key: str, max_age: int = 3600):
       <p>После того как <code>init()</code> подключился, страница приложения становится частью адреса tin.bar:</p>
 <pre><code class="lang-text">https://tin.bar/&lt;id&gt;/&lt;ваш путь&gt;?&lt;query&gt;#&lt;hash&gt;</code></pre>
       <p>Открытие такой ссылки загружает именно эту страницу приложения — ей можно делиться.</p>
+      <p>Если приложение хранит страницу в hash (сайт из одного файла, <code>createWebHashHistory</code>, <code>HashRouter</code>), hash попадает в адрес tin.bar как есть: <code>index.html#/items/5</code> → <code>https://tin.bar/&lt;id&gt;#/items/5</code>. Настраивать ничего не нужно; корень такого приложения (<code>#/</code>) — стартовая страница, в адрес он не пишется.</p>
 
       <h3>Как устроена история</h3>
       <p>История принадлежит tin.bar: каждая новая страница приложения становится записью во вкладке tin.bar, а само приложение остаётся на одной записи. Поэтому:</p>
