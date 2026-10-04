@@ -257,7 +257,7 @@
       <p>После загрузки появляется глобальный объект <code>window.Tin</code>. Повторное подключение (например, два тега <code>&lt;script&gt;</code>) безопасно: остаётся первая копия.</p>
       <div class="warn">
         <strong>Загружайте SDK именно с tin.bar</strong>
-        <p>SDK общается только с тем origin, с которого он загружен (<code>Tin.hostOrigin</code>). Если положить копию <code>tin.js</code> на свой домен и подключить её через <code>src</code>, SDK будет ждать ответов от вашего домена. Такая копия сразу отклоняет все вызовы с кодом <code>wrong_host</code> и пишет причину в консоль.</p>
+        <p>SDK общается только с тем origin, с которого он загружен (<code>Tin.hostOrigin</code>). Если положить копию <code>tin.js</code> на свой домен и подключить её через <code>src</code>, SDK будет ждать ответов от вашего домена. Такая копия отклоняет все вызовы с кодом <code>wrong_host</code> и пишет причину в консоль. Копию с домена приложения SDK распознаёт во всех браузерах, а копию с CDN и приложение не на tin.bar — в Chrome и Safari.</p>
       </div>
       <div class="note">
         <strong>Локальная разработка tin.bar</strong>
@@ -302,7 +302,8 @@
           <tr><td><code>Tin.user</code></td><td><code>{ id, name } | null</code></td><td>Текущий пользователь; <code>null</code> — гость. Только для интерфейса, <a href="#backend">не для авторизации</a>.</td></tr>
           <tr><td><code>Tin.theme</code></td><td>задаёт tin.bar</td><td>Текущая тема интерфейса tin.bar.</td></tr>
           <tr><td><code>Tin.locale</code></td><td>задаёт tin.bar</td><td>Текущий язык интерфейса tin.bar.</td></tr>
-          <tr><td><code>Tin.initData</code></td><td><code>string</code></td><td>Пользователь и время, подписанные ключом приложения, — для <a href="#backend">бэкенда</a>. <code>''</code> — гость.</td></tr>
+          <tr><td><code>Tin.initData</code></td><td><code>string</code></td><td>Пользователь и время, подписанные ключом приложения, — для <a href="#backend">бэкенда</a>. <code>''</code> — гость или подпись ещё не готова.</td></tr>
+          <tr><td><code>Tin.features</code></td><td><code>string[]</code></td><td>Что умеет загруженная копия SDK: <code>'init'</code>, <code>'login'</code>, <code>'openApp'</code>, <code>'history'</code>, <code>'initData'</code>. У старой закешированной копии новых возможностей (или всего списка) нет.</td></tr>
           <tr><td><code>Tin.isConnected</code></td><td><code>boolean</code></td><td><code>true</code>, когда <code>init()</code> подключился к tin.bar.</td></tr>
         </tbody>
       </table>
@@ -326,7 +327,7 @@ console.log(app.id, user ? user.name : 'гость')</code></pre>
 
     <section id="on">
       <h3><code>Tin.on(event, listener)</code></h3>
-      <code class="sig">Tin.on(event: 'user' | 'theme' | 'locale', listener: (data) =&gt; void): () =&gt; void</code>
+      <code class="sig">Tin.on(event: 'user' | 'theme' | 'locale' | 'initData', listener: (data) =&gt; void): () =&gt; void</code>
       <p>Подписывается на изменения. Возвращает функцию отписки. Перед вызовом слушателя SDK уже обновил соответствующее свойство (<code>Tin.user</code> и т.д.). Ошибка внутри слушателя не ломает остальных — она пишется в консоль.</p>
       <p>Неизвестное имя события сразу бросает исключение с кодом <code>unknown_event</code>.</p>
 <pre><code class="lang-js">const unsubscribe = Tin.on('theme', (theme) =&gt; {
@@ -369,6 +370,10 @@ Tin.on('user', (user) =&gt; {
   if (user) loadItems()
 })</code></pre>
       <div class="note"><strong>Читайте при каждом запросе</strong><p>tin.bar подписывает initData заново каждые 10 минут и при смене пользователя, а SDK сам обновляет <code>Tin.initData</code>. Не сохраняйте её в переменную при старте.</p></div>
+      <div class="note"><strong>Пользователь есть, а initData пустая</strong><p>Так бывает, если tin.bar не смог подписать данные (например, пропала сеть): он повторит попытку сам. Гость — это <code>Tin.user === null</code>. Когда подпись будет готова, придёт событие <code>'initData'</code>.</p>
+<pre><code class="lang-js">Tin.on('initData', (initData) =&gt; {
+  if (initData) loadItems()
+})</code></pre></div>
     </section>
 
     <section id="openapp">
@@ -387,6 +392,7 @@ Tin.on('user', (user) =&gt; {
           <tr><td><code>'user'</code></td><td><code>{ id, name } | null</code></td><td>Пользователь вошёл, вышел или сменил аккаунт.</td></tr>
           <tr><td><code>'theme'</code></td><td>новая тема</td><td>В tin.bar сменили тему.</td></tr>
           <tr><td><code>'locale'</code></td><td>новый язык</td><td>В tin.bar сменили язык.</td></tr>
+          <tr><td><code>'initData'</code></td><td><code>string</code></td><td>tin.bar подписал initData заново (раз в 10 минут), для нового пользователя (перед <code>'user'</code>) или после сбоя подписи.</td></tr>
         </tbody>
       </table>
       </div>
@@ -528,6 +534,7 @@ def verify_init_data(init_data: str, app_key: str, max_age: int = 3600):
 
       <h3>Одностраничные приложения (SPA)</h3>
       <p>Если приложение использует History API (React Router, Vue Router и т.п.), при переходе «назад»/«вперёд» в tin.bar SDK меняет адрес без перезагрузки и отправляет событие <code>popstate</code> — роутер отрисует нужную страницу сам. Многостраничные сайты при этом просто загружают нужную страницу.</p>
+      <p>Одностраничным SDK считает приложение после первого <code>history.pushState()</code>. Одного <code>replaceState()</code> для этого мало: его вызывают и обычные сайты, например аналитика, когда убирает <code>utm_*</code> из адреса. До первого <code>pushState()</code> «назад» загружает страницу заново — это медленнее, но работает везде.</p>
     </section>
 
     <section id="errors">
@@ -539,7 +546,7 @@ def verify_init_data(init_data: str, app_key: str, max_age: int = 3600):
         <tbody>
           <tr><td><code>not_embedded</code></td><td>Страница открыта не внутри tin.bar (не во фрейме).</td></tr>
           <tr><td><code>timeout</code></td><td>tin.bar не ответил на запрос за 10 секунд.</td></tr>
-          <tr><td><code>wrong_host</code></td><td>SDK загружен не с tin.bar, а с домена приложения или из его бандла.</td></tr>
+          <tr><td><code>wrong_host</code></td><td>SDK загружен не с той страницы, внутри которой открыто приложение: копия с домена приложения, CDN или из бандла, либо приложение открыто не на tin.bar (в Chrome и Safari это видно сразу). Причина — в <code>error.message</code> и в консоли.</td></tr>
           <tr><td><code>unknown_event</code></td><td><code>Tin.on()</code> с неизвестным именем события (бросается синхронно).</td></tr>
         </tbody>
       </table>
@@ -579,7 +586,7 @@ def verify_init_data(init_data: str, app_key: str, max_age: int = 3600):
 <pre><code class="lang-js">{ tin: 1, id, result }                    // успешный ответ на запрос
 { tin: 1, id, error: { code, message } }  // ошибка
 { tin: 1, event, data }                   // событие</code></pre>
-      <p>События: <code>user</code>, <code>theme</code>, <code>locale</code> (публичные) и служебные: <code>initData</code> (новая подпись, приходит перед <code>user</code>; SDK кладёт её в <code>Tin.initData</code>) и <code>navigate</code> (<code>data</code> — адрес, который нужно показать во фрейме без новой записи в истории).</p>
+      <p>События: <code>user</code>, <code>theme</code>, <code>locale</code>, <code>initData</code> (новая подпись приходит перед <code>user</code>) и служебное <code>navigate</code> (<code>data</code> — адрес, который нужно показать во фрейме без новой записи в истории).</p>
     </section>
 
     <section id="security">
