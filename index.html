@@ -215,6 +215,7 @@
     <a href="#on"><code>Tin.on()</code></a>
     <a href="#login"><code>Tin.login()</code></a>
     <a href="#initdata"><code>Tin.initData</code></a>
+    <a href="#startapp"><code>startapp</code></a>
     <a href="#openapp"><code>Tin.openApp()</code></a>
 
     <div class="group">Руководства</div>
@@ -303,7 +304,9 @@
           <tr><td><code>Tin.theme</code></td><td>задаёт tin.bar</td><td>Текущая тема интерфейса tin.bar.</td></tr>
           <tr><td><code>Tin.locale</code></td><td>задаёт tin.bar</td><td>Текущий язык интерфейса tin.bar.</td></tr>
           <tr><td><code>Tin.initData</code></td><td><code>string</code></td><td>Пользователь и время, подписанные ключом приложения, — для <a href="#backend">бэкенда</a>. <code>''</code> — гость или подпись ещё не готова.</td></tr>
-          <tr><td><code>Tin.features</code></td><td><code>string[]</code></td><td>Что умеет загруженная копия SDK: <code>'init'</code>, <code>'login'</code>, <code>'openApp'</code>, <code>'history'</code>, <code>'initData'</code>. У старой закешированной копии новых возможностей (или всего списка) нет.</td></tr>
+          <tr><td><code>Tin.features</code></td><td><code>string[]</code></td><td>Что умеет загруженная копия SDK: <code>'init'</code>, <code>'login'</code>, <code>'openApp'</code>, <code>'history'</code>, <code>'initData'</code>, <code>'historyState'</code>, <code>'canGoBack'</code>, <code>'startParam'</code>. У старой закешированной копии новых возможностей (или всего списка) нет.</td></tr>
+          <tr><td><code>Tin.startParam</code></td><td><code>string | null</code></td><td>Параметр <a href="#startapp">startapp</a> ссылки, которой открыли приложение. Подписан и в initData.</td></tr>
+          <tr><td><code>Tin.canGoBack</code></td><td><code>boolean</code></td><td>«Назад» останется в приложении: предыдущая запись вкладки — его же страница. По нему удобно показывать свою кнопку «назад».</td></tr>
           <tr><td><code>Tin.isConnected</code></td><td><code>boolean</code></td><td><code>true</code>, когда <code>init()</code> подключился к tin.bar.</td></tr>
         </tbody>
       </table>
@@ -314,7 +317,7 @@ const shareUrl = Tin.hostOrigin + '/' + Tin.app.id</code></pre>
 
     <section id="init">
       <h3><code>Tin.init()</code></h3>
-      <code class="sig">Tin.init(): Promise&lt;{ app, user, theme, locale, initData }&gt;</code>
+      <code class="sig">Tin.init(): Promise&lt;{ app, user, theme, locale, initData, startParam, canGoBack }&gt;</code>
       <p>Подключается к tin.bar и возвращает текущий контекст. После успешного вызова значения доступны и как <code>Tin.app</code>, <code>Tin.user</code>, <code>Tin.theme</code>, <code>Tin.locale</code>, <code>Tin.initData</code>, а SDK начинает синхронизировать адрес и историю с tin.bar.</p>
       <ul>
         <li>Можно вызывать сколько угодно раз: подключение одно, а каждый вызов получает копию текущего контекста.</li>
@@ -327,7 +330,7 @@ console.log(app.id, user ? user.name : 'гость')</code></pre>
 
     <section id="on">
       <h3><code>Tin.on(event, listener)</code></h3>
-      <code class="sig">Tin.on(event: 'user' | 'theme' | 'locale' | 'initData', listener: (data) =&gt; void): () =&gt; void</code>
+      <code class="sig">Tin.on(event: 'user' | 'theme' | 'locale' | 'initData' | 'canGoBack', listener: (data) =&gt; void): () =&gt; void</code>
       <p>Подписывается на изменения. Возвращает функцию отписки. Перед вызовом слушателя SDK уже обновил соответствующее свойство (<code>Tin.user</code> и т.д.). Ошибка внутри слушателя не ломает остальных — она пишется в консоль.</p>
       <p>Неизвестное имя события сразу бросает исключение с кодом <code>unknown_event</code>.</p>
 <pre><code class="lang-js">const unsubscribe = Tin.on('theme', (theme) =&gt; {
@@ -376,6 +379,15 @@ Tin.on('user', (user) =&gt; {
 })</code></pre></div>
     </section>
 
+    <section id="startapp">
+      <h3>Параметр запуска: <code>startapp</code></h3>
+      <p>Как <code>start_param</code> в Telegram. Ссылка <code>https://tin.bar/&lt;id&gt;?startapp=promo_42</code> открывает приложение, а значение попадает в <code>Tin.startParam</code> и в подписанную initData (<code>start_param</code>). Бэкенд может ему доверять: так удобно считать рефералов и открывать нужный экран. Допустимы латиница, цифры, <code>_</code> и <code>-</code>, до 512 символов.</p>
+<pre><code class="lang-js">if (Tin.startParam === 'promo_42') showPromo()
+
+// на бэкенде, после проверки подписи:
+// new URLSearchParams(initData).get('start_param')   // 'promo_42'</code></pre>
+    </section>
+
     <section id="openapp">
       <h3><code>Tin.openApp(id)</code></h3>
       <code class="sig">Tin.openApp(id: string): Promise&lt;void&gt;</code>
@@ -393,6 +405,7 @@ Tin.on('user', (user) =&gt; {
           <tr><td><code>'theme'</code></td><td>новая тема</td><td>В tin.bar сменили тему.</td></tr>
           <tr><td><code>'locale'</code></td><td>новый язык</td><td>В tin.bar сменили язык.</td></tr>
           <tr><td><code>'initData'</code></td><td><code>string</code></td><td>tin.bar подписал initData заново (раз в 10 минут), для нового пользователя (перед <code>'user'</code>) или после сбоя подписи.</td></tr>
+          <tr><td><code>'canGoBack'</code></td><td><code>boolean</code></td><td>Изменилось, останется ли «назад» в приложении.</td></tr>
         </tbody>
       </table>
       </div>
@@ -420,7 +433,7 @@ Tin.on('user', (user) =&gt; {
       </ol>
 
       <h3>Формат и проверка</h3>
-<pre><code class="lang-text">initData          = auth_date=&lt;unix, сек&gt;&amp;user=&lt;JSON { id, name }&gt;&amp;hash=&lt;hex&gt;   (query-строка)
+<pre><code class="lang-text">initData          = auth_date=&lt;unix, сек&gt;&amp;user=&lt;JSON { id, name }&gt;[&amp;start_param=…]&amp;hash=&lt;hex&gt;   (query-строка)
 data_check_string = строки "key=value" всех полей, кроме hash, отсортированные как строки, через "\n"
 secret            = HMAC_SHA256(key = "TinAppData", data = ключ приложения)
 hash              = hex(HMAC_SHA256(key = secret, data = data_check_string))</code></pre>
@@ -517,7 +530,7 @@ def verify_init_data(init_data: str, app_key: str, max_age: int = 3600):
           <tr><td><code>history.replaceState()</code></td><td>Выполняется как обычно; tin.bar обновляет текущий адрес.</td></tr>
           <tr><td><code>history.back() / forward() / go(n)</code></td><td>Выполняет tin.bar в своей вкладке.</td></tr>
           <tr><td>Клик по ссылке на другую страницу того же сайта</td><td>Открывается как новая запись tin.bar.</td></tr>
-          <tr><td><code>location.assign()</code>, <code>location.hash = …</code>, <code>navigation.navigate()</code></td><td>Открывается как новая запись tin.bar, если браузер поддерживает Navigation API. Иначе выполняется нативно: запись принадлежит фрейму, а tin.bar только следит за адресом.</td></tr>
+          <tr><td><code>location.assign()</code>, <code>location.hash = …</code>, <code>navigation.navigate()</code></td><td>Открывается как новая запись tin.bar, если браузер поддерживает Navigation API: SDK отменяет push и повторяет его как replace. Иначе выполняется нативно: запись принадлежит фрейму, а tin.bar только следит за адресом.</td></tr>
         </tbody>
       </table>
       </div>
@@ -532,8 +545,17 @@ def verify_init_data(init_data: str, app_key: str, max_age: int = 3600):
         <li>всё, что происходит до подключения <code>init()</code> и вне tin.bar.</li>
       </ul>
 
+      <h3>Состояние записи и своя кнопка «назад»</h3>
+      <p>То, что приложение кладёт в запись (<code>history.pushState(state, …)</code>, <code>replaceState</code>), tin.bar хранит в своей записи и возвращает при «назад» и «вперёд»: в <code>history.state</code> и в событии <code>popstate</code>. Роутер восстановит позицию скролла и всё, что хранит в состоянии. После перезагрузки страницы история фрейма начинается заново, как и без tin.bar.</p>
+      <p>Кнопку «назад» внутри приложения показывайте по <code>Tin.canGoBack</code>: на первой странице приложения «назад» уведёт на tin.bar.</p>
+<pre><code class="lang-js">const backButton = document.querySelector('#back')
+backButton.hidden = !Tin.canGoBack
+Tin.on('canGoBack', (canGoBack) =&gt; (backButton.hidden = !canGoBack))
+backButton.onclick = () =&gt; history.back()</code></pre>
+
       <h3>Одностраничные приложения (SPA)</h3>
       <p>Если приложение использует History API (React Router, Vue Router и т.п.), при переходе «назад»/«вперёд» в tin.bar SDK меняет адрес без перезагрузки и отправляет событие <code>popstate</code> — роутер отрисует нужную страницу сам. Многостраничные сайты при этом просто загружают нужную страницу.</p>
+      <p>Роутеры на Navigation API (<code>navigation.addEventListener('navigate', …)</code> с <code>intercept()</code>) тоже работают: такой роутер получает переход уже как replace и показывает страницу без загрузки.</p>
       <p>Одностраничным SDK считает приложение после первого <code>history.pushState()</code>. Одного <code>replaceState()</code> для этого мало: его вызывают и обычные сайты, например аналитика, когда убирает <code>utm_*</code> из адреса. До первого <code>pushState()</code> «назад» загружает страницу заново — это медленнее, но работает везде.</p>
     </section>
 
@@ -573,10 +595,10 @@ def verify_init_data(init_data: str, app_key: str, max_age: int = 3600):
       <table>
         <thead><tr><th>method</th><th>params</th><th>Назначение</th></tr></thead>
         <tbody>
-          <tr><td><code>init</code></td><td><code>{ href }</code></td><td>Подключение; ответ — <code>{ app, user, theme, locale, initData }</code>.</td></tr>
+          <tr><td><code>init</code></td><td><code>{ href }</code></td><td>Подключение; ответ — <code>{ app, user, theme, locale, initData, startParam, canGoBack }</code>.</td></tr>
           <tr><td><code>login</code></td><td>—</td><td>Открыть вход через кошелёк.</td></tr>
           <tr><td><code>open</code></td><td><code>{ id }</code></td><td>Открыть другое приложение.</td></tr>
-          <tr><td><code>location</code></td><td><code>{ href, replace }</code></td><td>Адрес фрейма изменился: новая запись (<code>replace: false</code>) или замена текущей.</td></tr>
+          <tr><td><code>location</code></td><td><code>{ href, replace, state? }</code></td><td>Адрес фрейма изменился: новая запись (<code>replace: false</code>) или замена текущей. <code>state</code> — состояние записи после <code>pushState</code>/<code>replaceState</code>.</td></tr>
           <tr><td><code>go</code></td><td><code>{ delta }</code></td><td>Переход по истории вкладки tin.bar.</td></tr>
         </tbody>
       </table>
@@ -586,7 +608,7 @@ def verify_init_data(init_data: str, app_key: str, max_age: int = 3600):
 <pre><code class="lang-js">{ tin: 1, id, result }                    // успешный ответ на запрос
 { tin: 1, id, error: { code, message } }  // ошибка
 { tin: 1, event, data }                   // событие</code></pre>
-      <p>События: <code>user</code>, <code>theme</code>, <code>locale</code>, <code>initData</code> (новая подпись приходит перед <code>user</code>) и служебное <code>navigate</code> (<code>data</code> — адрес, который нужно показать во фрейме без новой записи в истории).</p>
+      <p>События: <code>user</code>, <code>theme</code>, <code>locale</code>, <code>initData</code> (новая подпись приходит перед <code>user</code>), <code>canGoBack</code> и служебное <code>navigate</code>: <code>data</code> — адрес, который нужно показать во фрейме без новой записи в истории, <code>state</code> — что приложение хранило в этой записи.</p>
     </section>
 
     <section id="security">
