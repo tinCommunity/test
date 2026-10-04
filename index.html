@@ -353,10 +353,20 @@ loginButton.onclick = () =&gt; Tin.login()</code></pre>
       <h3><code>Tin.initData</code></h3>
       <code class="sig">Tin.initData: string</code>
       <p>Пользователь и время подписи, подписанные tin.bar ключом вашего приложения, — как <code>initData</code> в Telegram Mini Apps. По ней ваш бэкенд проверяет, кто пользователь: подделать её без ключа нельзя. Для гостя — пустая строка. Как проверять — в разделе <a href="#backend">Авторизация на бэкенде</a>.</p>
-<pre><code class="lang-js">if (!Tin.initData) Tin.login()   // гость
+<pre><code class="lang-js">async function loadItems() {
+  // Гость: без initData бэкенд ответит 401, запрос не отправляем
+  if (!Tin.initData) return null
+  const response = await fetch('https://your.backend/items', {
+    headers: { Authorization: 'tin ' + Tin.initData },
+  })
+  return response.json()
+}
 
-await fetch('https://your.backend/items', {
-  headers: { Authorization: 'tin ' + Tin.initData },
+// login() только открывает окно входа и не ждёт его. Вошедший пользователь
+// придёт в событии 'user' — тогда initData уже подписана и можно повторить запрос
+loginButton.onclick = () =&gt; Tin.login()
+Tin.on('user', (user) =&gt; {
+  if (user) loadItems()
 })</code></pre>
       <div class="note"><strong>Читайте при каждом запросе</strong><p>tin.bar подписывает initData заново каждые 10 минут и при смене пользователя, а SDK сам обновляет <code>Tin.initData</code>. Не сохраняйте её в переменную при старте.</p></div>
     </section>
