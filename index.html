@@ -527,10 +527,10 @@ def verify_init_data(init_data: str, app_key: str, max_age: int = 3600):
         <thead><tr><th>Действие в приложении</th><th>Что происходит</th></tr></thead>
         <tbody>
           <tr><td><code>history.pushState()</code></td><td>Превращается в <code>replaceState</code> во фрейме; tin.bar добавляет новую запись во вкладку.</td></tr>
-          <tr><td><code>history.replaceState()</code></td><td>Выполняется как обычно; tin.bar обновляет текущий адрес.</td></tr>
+          <tr><td><code>history.replaceState()</code></td><td>Выполняется как обычно; tin.bar обновляет текущий адрес. Частые вызовы (поиск, синхронизированный с адресом, скролл) доходят до tin.bar не чаще раза в 100 мс — последний побеждает.</td></tr>
           <tr><td><code>history.back() / forward() / go(n)</code></td><td>Выполняет tin.bar в своей вкладке.</td></tr>
-          <tr><td>Клик по ссылке на другую страницу того же сайта</td><td>Открывается как новая запись tin.bar.</td></tr>
-          <tr><td><code>location.assign()</code>, <code>location.hash = …</code>, <code>navigation.navigate()</code></td><td>Открывается как новая запись tin.bar, если браузер поддерживает Navigation API: SDK отменяет push и повторяет его как replace. Иначе выполняется нативно: запись принадлежит фрейму, а tin.bar только следит за адресом.</td></tr>
+          <tr><td>Клик по ссылке на другую страницу того же сайта (и внутри веб-компонента)</td><td>Открывается как новая запись tin.bar — когда страница загрузилась, как в браузере. Скачивание файла или ответ <code>204</code> записи не добавляют, а «назад» во время медленной загрузки останавливает её.</td></tr>
+          <tr><td><code>location.assign()</code>, <code>location.hash = …</code>, <code>navigation.navigate()</code></td><td>Открывается как новая запись tin.bar, если браузер поддерживает Navigation API: SDK отменяет push и повторяет его как replace (промисы исходного вызова <code>navigation.navigate()</code> при этом отклоняются с <code>AbortError</code>, страница всё равно открывается). Иначе выполняется нативно: запись принадлежит фрейму, а tin.bar только следит за адресом.</td></tr>
         </tbody>
       </table>
       </div>
@@ -595,10 +595,10 @@ backButton.onclick = () =&gt; history.back()</code></pre>
       <table>
         <thead><tr><th>method</th><th>params</th><th>Назначение</th></tr></thead>
         <tbody>
-          <tr><td><code>init</code></td><td><code>{ href }</code></td><td>Подключение; ответ — <code>{ app, user, theme, locale, initData, startParam, canGoBack }</code>.</td></tr>
+          <tr><td><code>init</code></td><td><code>{ href, state? }</code></td><td>Подключение; <code>state</code> — что приложение уже хранит в записи страницы. Ответ — <code>{ app, user, theme, locale, initData, startParam, canGoBack }</code> и служебное <code>navigating: true</code>, если сразу за ним придёт <code>navigate</code> (пользователь прошёл по истории, пока приложение грузилось).</td></tr>
           <tr><td><code>login</code></td><td>—</td><td>Открыть вход через кошелёк.</td></tr>
           <tr><td><code>open</code></td><td><code>{ id }</code></td><td>Открыть другое приложение.</td></tr>
-          <tr><td><code>location</code></td><td><code>{ href, replace, state? }</code></td><td>Адрес фрейма изменился: новая запись (<code>replace: false</code>) или замена текущей. <code>state</code> — состояние записи после <code>pushState</code>/<code>replaceState</code>.</td></tr>
+          <tr><td><code>location</code></td><td><code>{ href, replace, state?, load? }</code></td><td>Адрес фрейма изменился: новая запись (<code>replace: false</code>) или замена текущей. <code>state</code> — состояние записи после <code>pushState</code>/<code>replaceState</code>. <code>load: true</code> — приложение начало загружать страницу по ссылке: tin.bar добавит запись, когда страница придёт (её <code>init</code> или <code>location</code> с этим адресом). Уходить со страницы стоит после ответа на это сообщение: сообщение от страницы, которой уже нет, приходит без <code>event.source</code>, и tin.bar его не примет.</td></tr>
           <tr><td><code>go</code></td><td><code>{ delta }</code></td><td>Переход по истории вкладки tin.bar.</td></tr>
         </tbody>
       </table>
