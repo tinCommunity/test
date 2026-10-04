@@ -638,6 +638,8 @@ backButton.onclick = () =&gt; history.back()</code></pre>
   </main>
 </div>
 
+<!-- Документация — тоже приложение tin.bar: разделы (#init, #on…) попадают в адрес и историю tin.bar. -->
+<script src="https://tin.bar/sdk/tin.js"></script>
 <script>
   // Простая подсветка синтаксиса
   ;(function () {
@@ -705,6 +707,10 @@ backButton.onclick = () =&gt; history.back()</code></pre>
     }, { rootMargin: '-60px 0px -70% 0px' })
     document.querySelectorAll('main section[id]').forEach(function (s) { observer.observe(s) })
   })()
+
+  // На tin.bar SDK переносит разделы в адрес и историю tin.bar. Открыта не на tin.bar или SDK не загрузился —
+  // страница работает как обычный сайт.
+  if (window.Tin) Tin.init().catch(function () {})
 </script>
 </body>
 </html>
