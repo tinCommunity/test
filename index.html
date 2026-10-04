@@ -22,6 +22,8 @@
     --tok-kw: #a61e4d;
     --tok-num: #c2410c;
     --tok-fn: #3b5bdb;
+    /* На tin.bar его кнопки висят над страницей: шапка начинается под ними (Tin.contentSafeAreaInset). */
+    --header-h: calc(56px + var(--tin-content-safe-area-inset-top, 0px));
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -61,7 +63,7 @@
   }
 
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-h) + 16px); }
   body {
     margin: 0;
     background: var(--bg);
@@ -74,7 +76,7 @@
   header.top {
     position: sticky; top: 0; z-index: 10;
     display: flex; align-items: center; gap: 12px;
-    height: 56px; padding: 0 16px;
+    height: var(--header-h); padding: var(--tin-content-safe-area-inset-top, 0px) 16px 0;
     background: color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--border);
@@ -94,8 +96,8 @@
 
   .layout { display: flex; max-width: 1180px; margin: 0 auto; }
   nav.side {
-    position: sticky; top: 56px; align-self: flex-start;
-    width: 250px; flex: none; height: calc(100vh - 56px); overflow-y: auto;
+    position: sticky; top: var(--header-h); align-self: flex-start;
+    width: 250px; flex: none; height: calc(100vh - var(--header-h)); overflow-y: auto;
     padding: 24px 16px 40px; border-right: 1px solid var(--border);
     font-size: 14px;
   }
@@ -182,7 +184,7 @@
   @media (max-width: 860px) {
     #menu-btn { display: inline-block; }
     nav.side {
-      position: fixed; top: 56px; left: 0; z-index: 9; background: var(--bg);
+      position: fixed; top: var(--header-h); left: 0; z-index: 9; background: var(--bg);
       transform: translateX(-100%); transition: transform .2s;
     }
     body.menu-open nav.side { transform: none; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
@@ -217,11 +219,14 @@
     <a href="#initdata"><code>Tin.initData</code></a>
     <a href="#startapp"><code>startapp</code></a>
     <a href="#openapp"><code>Tin.openApp()</code></a>
+    <a href="#reload"><code>Tin.reload()</code></a>
 
     <div class="group">Руководства</div>
     <a href="#events">События</a>
     <a href="#backend">Авторизация на бэкенде</a>
     <a href="#history">Ссылки и «назад»</a>
+    <a href="#safe-area">Кнопки tin.bar</a>
+    <a href="#cache">Обновление и кеш</a>
     <a href="#errors">Ошибки</a>
 
     <div class="group">Справка</div>
@@ -239,6 +244,7 @@
         <a class="card" href="#quickstart"><b>Быстрый старт</b><span>Подключить SDK и получить пользователя за пять строк.</span></a>
         <a class="card" href="#backend"><b>Бэкенд</b><span>Как безопасно узнать, кто пользователь, на своём сервере.</span></a>
         <a class="card" href="#history"><b>Ссылки и «назад»</b><span>Как страницы приложения попадают в адрес и историю tin.bar.</span></a>
+        <a class="card" href="#safe-area"><b>Кнопки tin.bar</b><span>Как не положить нужное под кнопки поверх приложения.</span></a>
       </div>
 
       <p>Приложение tin.bar открывает в <code>&lt;iframe&gt;</code>. SDK общается с родительским окном через <code>window.postMessage</code> и даёт приложению:</p>
@@ -247,7 +253,9 @@
         <li><strong>события</strong> — когда пользователь входит/выходит, меняет тему или язык;</li>
         <li><strong>вход</strong> — просьба к tin.bar открыть вход через кошелёк;</li>
         <li><strong>initData</strong> — пользователь, подписанный ключом вашего приложения: бэкенд проверяет подпись сам, без запросов к tin.bar;</li>
-        <li><strong>навигацию</strong> — страницы приложения становятся частью адреса tin.bar, кнопки «назад» и «вперёд» работают без единой строчки кода.</li>
+        <li><strong>навигацию</strong> — страницы приложения становятся частью адреса tin.bar, кнопки «назад» и «вперёд» работают без единой строчки кода;</li>
+        <li><strong>место под кнопки tin.bar</strong> — экран целиком отдан приложению, а SDK говорит, сколько места сверху занимают кнопки tin.bar;</li>
+        <li><strong>обновление мимо кеша</strong> — после деплоя приложение загружается таким, каким его отдаёт сервер сейчас.</li>
       </ul>
     </section>
 
@@ -287,11 +295,13 @@
   document.querySelector('#login').onclick = () =&gt; Tin.login()
 &lt;/script&gt;</code></pre>
       <p>Вне tin.bar (страница открыта напрямую, не во фрейме) <code>init()</code> отклоняется с кодом <code>not_embedded</code>, а навигация работает как обычно — приложение можно разрабатывать и открывать отдельно.</p>
+      <p>Кнопки tin.bar висят поверх приложения в правом верхнем углу. Одна строка CSS оставляет под ними место — подробнее в разделе <a href="#safe-area">Кнопки tin.bar</a>:</p>
+<pre><code class="lang-css">body { padding-top: var(--tin-content-safe-area-inset-top, 0px) }</code></pre>
     </section>
 
     <section id="props">
       <h2>Свойства</h2>
-      <p>Свойства только для чтения. <code>app</code>, <code>user</code>, <code>theme</code> и <code>locale</code> равны <code>null</code>, а <code>initData</code> — пустой строке, пока <code>init()</code> не подключился. Затем они обновляются вместе с <a href="#events">событиями</a>.</p>
+      <p>Свойства только для чтения. <code>app</code>, <code>user</code>, <code>theme</code> и <code>locale</code> равны <code>null</code>, <code>initData</code> — пустой строке, а <code>contentSafeAreaInset</code> — нулям, пока <code>init()</code> не подключился. Затем они обновляются вместе с <a href="#events">событиями</a>.</p>
       <div class="table-wrap">
       <table>
         <thead><tr><th>Свойство</th><th>Тип</th><th>Описание</th></tr></thead>
@@ -304,9 +314,10 @@
           <tr><td><code>Tin.theme</code></td><td>задаёт tin.bar</td><td>Текущая тема интерфейса tin.bar.</td></tr>
           <tr><td><code>Tin.locale</code></td><td>задаёт tin.bar</td><td>Текущий язык интерфейса tin.bar.</td></tr>
           <tr><td><code>Tin.initData</code></td><td><code>string</code></td><td>Пользователь и время, подписанные ключом приложения, — для <a href="#backend">бэкенда</a>. <code>''</code> — гость или подпись ещё не готова.</td></tr>
-          <tr><td><code>Tin.features</code></td><td><code>string[]</code></td><td>Что умеет загруженная копия SDK: <code>'init'</code>, <code>'login'</code>, <code>'openApp'</code>, <code>'history'</code>, <code>'initData'</code>, <code>'historyState'</code>, <code>'canGoBack'</code>, <code>'startParam'</code>. У старой закешированной копии новых возможностей (или всего списка) нет.</td></tr>
+          <tr><td><code>Tin.features</code></td><td><code>string[]</code></td><td>Что умеет загруженная копия SDK: <code>'init'</code>, <code>'login'</code>, <code>'openApp'</code>, <code>'history'</code>, <code>'initData'</code>, <code>'historyState'</code>, <code>'canGoBack'</code>, <code>'startParam'</code>, <code>'contentSafeAreaInset'</code>, <code>'reload'</code>. У старой закешированной копии новых возможностей (или всего списка) нет.</td></tr>
           <tr><td><code>Tin.startParam</code></td><td><code>string | null</code></td><td>Параметр <a href="#startapp">startapp</a> ссылки, которой открыли приложение. Подписан и в initData.</td></tr>
           <tr><td><code>Tin.canGoBack</code></td><td><code>boolean</code></td><td>«Назад» останется в приложении: предыдущая запись вкладки — его же страница. По нему удобно показывать свою кнопку «назад».</td></tr>
+          <tr><td><code>Tin.contentSafeAreaInset</code></td><td><code>{ top, right, bottom, left }</code></td><td>Сколько от каждого края фрейма занимают <a href="#safe-area">кнопки tin.bar</a>, в CSS-пикселях. То же — в CSS-переменных <code>--tin-content-safe-area-inset-*</code>.</td></tr>
           <tr><td><code>Tin.isConnected</code></td><td><code>boolean</code></td><td><code>true</code>, когда <code>init()</code> подключился к tin.bar.</td></tr>
         </tbody>
       </table>
@@ -317,8 +328,8 @@ const shareUrl = Tin.hostOrigin + '/' + Tin.app.id</code></pre>
 
     <section id="init">
       <h3><code>Tin.init()</code></h3>
-      <code class="sig">Tin.init(): Promise&lt;{ app, user, theme, locale, initData, startParam, canGoBack }&gt;</code>
-      <p>Подключается к tin.bar и возвращает текущий контекст. После успешного вызова значения доступны и как <code>Tin.app</code>, <code>Tin.user</code>, <code>Tin.theme</code>, <code>Tin.locale</code>, <code>Tin.initData</code>, а SDK начинает синхронизировать адрес и историю с tin.bar.</p>
+      <code class="sig">Tin.init(): Promise&lt;{ app, user, theme, locale, initData, startParam, canGoBack, contentSafeAreaInset }&gt;</code>
+      <p>Подключается к tin.bar и возвращает текущий контекст. После успешного вызова значения доступны и как <code>Tin.app</code>, <code>Tin.user</code>, <code>Tin.theme</code>, <code>Tin.locale</code>, <code>Tin.initData</code>, <code>Tin.contentSafeAreaInset</code> и т.д., на <code>&lt;html&gt;</code> появляются CSS-переменные <code>--tin-content-safe-area-inset-*</code>, а SDK начинает синхронизировать адрес и историю с tin.bar.</p>
       <ul>
         <li>Можно вызывать сколько угодно раз: подключение одно, а каждый вызов получает копию текущего контекста.</li>
         <li>Если вызов завершился ошибкой, следующий <code>init()</code> попробует подключиться заново.</li>
@@ -330,7 +341,7 @@ console.log(app.id, user ? user.name : 'гость')</code></pre>
 
     <section id="on">
       <h3><code>Tin.on(event, listener)</code></h3>
-      <code class="sig">Tin.on(event: 'user' | 'theme' | 'locale' | 'initData' | 'canGoBack', listener: (data) =&gt; void): () =&gt; void</code>
+      <code class="sig">Tin.on(event: 'user' | 'theme' | 'locale' | 'initData' | 'canGoBack' | 'contentSafeAreaInset', listener: (data) =&gt; void): () =&gt; void</code>
       <p>Подписывается на изменения. Возвращает функцию отписки. Перед вызовом слушателя SDK уже обновил соответствующее свойство (<code>Tin.user</code> и т.д.). Ошибка внутри слушателя не ломает остальных — она пишется в консоль.</p>
       <p>Неизвестное имя события сразу бросает исключение с кодом <code>unknown_event</code>.</p>
 <pre><code class="lang-js">const unsubscribe = Tin.on('theme', (theme) =&gt; {
@@ -361,6 +372,7 @@ loginButton.onclick = () =&gt; Tin.login()</code></pre>
   // Гость: без initData бэкенд ответит 401, запрос не отправляем
   if (!Tin.initData) return null
   const response = await fetch('https://your.backend/items', {
+    // Как передавать — решает ваш бэкенд, см. «Как передавать initData»
     headers: { Authorization: 'tin ' + Tin.initData },
   })
   return response.json()
@@ -395,6 +407,14 @@ Tin.on('user', (user) =&gt; {
 <pre><code class="lang-js">Tin.openApp('demo')   // откроет https://tin.bar/demo</code></pre>
     </section>
 
+    <section id="reload">
+      <h3><code>Tin.reload()</code></h3>
+      <code class="sig">Tin.reload(): Promise&lt;void&gt;</code>
+      <p>Загружает приложение заново мимо кеша браузера — то же, что пункт «Обновить кэш» в меню tin.bar. SDK переспрашивает у сервера файлы страницы (скрипты, стили и то, что они загружают), затем перезагружает её. Промис разрешается, когда страница уже перезагружается. Работает и вне tin.bar. Как это устроено — в разделе <a href="#cache">Обновление и кеш</a>.</p>
+<pre><code class="lang-js">updateButton.onclick = () =&gt; Tin.reload()   // свежие файлы с сервера
+reloadButton.onclick = () =&gt; location.reload()   // обычная перезагрузка, SDK не нужен</code></pre>
+    </section>
+
     <section id="events">
       <h2>События</h2>
       <div class="table-wrap">
@@ -406,6 +426,7 @@ Tin.on('user', (user) =&gt; {
           <tr><td><code>'locale'</code></td><td>новый язык</td><td>В tin.bar сменили язык.</td></tr>
           <tr><td><code>'initData'</code></td><td><code>string</code></td><td>tin.bar подписал initData заново (раз в 10 минут), для нового пользователя (перед <code>'user'</code>) или после сбоя подписи.</td></tr>
           <tr><td><code>'canGoBack'</code></td><td><code>boolean</code></td><td>Изменилось, останется ли «назад» в приложении.</td></tr>
+          <tr><td><code>'contentSafeAreaInset'</code></td><td><code>{ top, right, bottom, left }</code></td><td>Изменилось место под <a href="#safe-area">кнопками tin.bar</a>: интерфейс tin.bar масштабируется вместе с шириной окна. CSS-переменные SDK уже обновил.</td></tr>
         </tbody>
       </table>
       </div>
@@ -428,9 +449,36 @@ Tin.on('user', (user) =&gt; {
       <ol class="flow">
         <li>Владелец приложения берёт ключ в приложении «Apps» (<code>tin.bar/apps</code> → своё приложение → «Показать ключ») и кладёт его на свой сервер.</li>
         <li>Когда пользователь открывает приложение, tin.bar подписывает его ключом приложения и отдаёт в <code>Tin.initData</code>.</li>
-        <li>Приложение шлёт <code>Tin.initData</code> своему бэкенду: <code>Authorization: tin &lt;initData&gt;</code>.</li>
+        <li>Приложение прикладывает строку <code>Tin.initData</code> к запросам на свой бэкенд — как удобно вам: в заголовке, в теле запроса или в параметре адреса (см. <a href="#send-initdata">Как передавать initData</a>).</li>
         <li>Бэкенд проверяет подпись ключом и время подписи и доверяет <code>user.id</code>.</li>
       </ol>
+
+      <h3 id="send-initdata">Как передавать initData</h3>
+      <p>tin.bar не диктует способ: initData — обычная строка, и как она попадёт на ваш сервер, решаете вы. Бэкенду нужно одно — получить её <strong>целиком и без изменений</strong>: подпись считается по этой строке, и любая правка (обрезка, перекодировка, разбор и сборка заново) ломает проверку.</p>
+<pre><code class="lang-js">// 1. Заголовок — вариант по умолчанию
+fetch('https://your.backend/items', {
+  headers: { Authorization: 'tin ' + Tin.initData },
+})
+
+// 2. Тело запроса
+fetch('https://your.backend/items', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ initData: Tin.initData, title: 'Новая запись' }),
+})
+
+// 3. Параметр адреса — только через encodeURIComponent
+new WebSocket('wss://your.backend/live?initData=' + encodeURIComponent(Tin.initData))</code></pre>
+      <ul>
+        <li><strong>Заголовок</strong> — лучший вариант по умолчанию: работает для любых запросов, включая <code>GET</code>, и не попадает в логи адресов. Имя схемы <code>tin</code> — просто договорённость, её используют примеры на этой странице. Подойдёт и свой заголовок, например <code>X-Tin-Init-Data</code>; для запроса на другой домен разрешите его в CORS.</li>
+        <li><strong>Тело запроса</strong> — если API и так принимает JSON в <code>POST</code>.</li>
+        <li><strong>Параметр адреса</strong> — когда заголовок не передать: <code>WebSocket</code>, <code>EventSource</code>, ссылка на файл. Строка сама состоит из <code>&amp;</code> и <code>=</code>, поэтому без <code>encodeURIComponent</code> она развалится на отдельные параметры. Адрес оседает в логах серверов и прокси, а пока initData не устарела, по ней можно выдать себя за пользователя — используйте этот способ, только если другого нет.</li>
+      </ul>
+      <p>Как бы строка ни пришла, проверка одна и та же: функция <code>verifyInitData()</code> из примеров ниже принимает её как есть. В примере для Express она читается из заголовка — если вы передаёте её иначе, достаньте её оттуда (<code>req.body.initData</code>, <code>req.query.initData</code>).</p>
+      <div class="note">
+        <strong>Своя сессия вместо initData в каждом запросе</strong>
+        <p>Можно проверить initData один раз — например, в запросе входа — и выдать свою сессию (cookie, токен). Тогда сессия не должна жить дольше, чем вы готовы верить <code>auth_date</code>, а приложению стоит сбрасывать её и входить заново, когда в событии <code>'user'</code> приходит другой пользователь или <code>null</code>.</p>
+      </div>
 
       <h3>Формат и проверка</h3>
 <pre><code class="lang-text">initData          = auth_date=&lt;unix, сек&gt;&amp;user=&lt;JSON { id, name }&gt;[&amp;start_param=…]&amp;hash=&lt;hex&gt;   (query-строка)
@@ -560,6 +608,69 @@ backButton.onclick = () =&gt; history.back()</code></pre>
       <p>Одностраничным SDK считает приложение после первого <code>history.pushState()</code>. Одного <code>replaceState()</code> для этого мало: его вызывают и обычные сайты, например аналитика, когда убирает <code>utm_*</code> из адреса. До первого <code>pushState()</code> «назад» загружает страницу заново — это медленнее, но работает везде.</p>
     </section>
 
+    <section id="safe-area">
+      <h2>Кнопки tin.bar</h2>
+      <p>Экран целиком отдан приложению: полосы с заголовком над ним нет. Свои кнопки tin.bar кладёт поверх приложения — капсулой в правом верхнем углу, как у мини-приложений Telegram и WeChat: «Ещё», «Свернуть» и «Закрыть». Они видны и пока приложение загружается, так что зависшее приложение всегда можно закрыть.</p>
+      <p><code>Tin.contentSafeAreaInset</code> — <code>{ top, right, bottom, left }</code> в CSS-пикселях — говорит, как далеко от каждого края фрейма заходят кнопки. Сейчас это полоса сверху: <code>top</code> — её высота, кнопки стоят по её центру у правого края, остальные стороны равны <code>0</code>. Фон или картинка могут уходить под полосу, а то, что нужно читать или нажимать, держите ниже.</p>
+
+      <h3>CSS-переменные</h3>
+      <p>Проще всего — переменные, которые SDK ставит на <code>&lt;html&gt;</code>: <code>--tin-content-safe-area-inset-top</code>, <code>-right</code>, <code>-bottom</code> и <code>-left</code>. Они появляются, когда <code>init()</code> подключился, и обновляются сами. Вне tin.bar их нет — указывайте запасное значение.</p>
+<pre><code class="lang-css">/* Содержимое начинается под кнопками tin.bar; вне tin.bar отступа нет */
+body { padding-top: var(--tin-content-safe-area-inset-top, 0px) }
+
+/* Липкая шапка: её фон уходит под кнопки, а содержимое — ниже них */
+header.top {
+  position: sticky; top: 0;
+  padding-top: var(--tin-content-safe-area-inset-top, 0px);
+}</code></pre>
+
+      <h3>Из JavaScript</h3>
+<pre><code class="lang-js">function layout(inset) {
+  canvas.style.marginTop = inset.top + 'px'
+}
+Tin.init().then(({ contentSafeAreaInset }) =&gt; layout(contentSafeAreaInset))
+Tin.on('contentSafeAreaInset', layout)   // tin.bar сменил размер интерфейса</code></pre>
+
+      <h3>Меню, «Свернуть» и «Закрыть»</h3>
+      <ul>
+        <li><strong>«Ещё»</strong> открывает меню: название приложения и сайт, на котором оно на самом деле работает (адрес tin.bar его не показывает), «Обновить», «Обновить кэш» (см. <a href="#cache">Обновление и кеш</a>), «Скопировать ссылку» и «Поделиться» — там, где у браузера есть системное окно «Поделиться».</li>
+        <li><strong>«Свернуть»</strong> уводит на главную tin.bar, а приложение прячет, не выгружая: оно продолжает работать, сохраняет размер и прокрутку. На других страницах tin.bar внизу видна его плашка: нажатие возвращает приложение на ту же страницу, с той же историей и <code>Tin.canGoBack</code>, крестик закрывает его. Пока приложение свёрнуто, его переходы не меняют адрес и историю tin.bar.</li>
+        <li><strong>«Закрыть»</strong> — как и любой другой уход со страницы приложения («назад», ссылка) — выгружает его.</li>
+      </ul>
+      <p>Открыто одно приложение за раз: открытие другого заменяет свёрнутое.</p>
+    </section>
+
+    <section id="cache">
+      <h2>Обновление и кеш</h2>
+      <p>В меню «Ещё» два пункта. Делать для них ничего не нужно — их обрабатывает SDK.</p>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Пункт меню</th><th>Что происходит</th></tr></thead>
+        <tbody>
+          <tr><td>«Обновить»</td><td>Приложение перезагружает свою страницу на месте, как кнопка обновления браузера (<code>location.reload()</code>): тот же фрейм, та же страница и состояние её записи истории. Браузер переспрашивает у сервера саму страницу.</td></tr>
+          <tr><td>«Обновить кэш»</td><td>То же, но сначала SDK переспрашивает у сервера файлы приложения — как <a href="#reload"><code>Tin.reload()</code></a>.</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>Зачем обновлять кеш</h3>
+      <p>Пока страница и её файлы выглядят свежими, браузер берёт их из кеша, не спрашивая сервер. Если сервер не присылает <code>Cache-Control</code>, это часы или дни (эвристическая свежесть): после деплоя приложение остаётся старым — и при следующих запусках тоже. Фрейм не переспрашивает сервер даже при повторном открытии, а обычная перезагрузка переспрашивает страницу, но в Chrome — не её скрипты.</p>
+      <p>Очистить кеш браузера не могут ни tin.bar, ни приложение, но страница может сама переспросить свои файлы. Так и работают «Обновить кэш» и <code>Tin.reload()</code>:</p>
+      <ol class="flow">
+        <li>SDK собирает файлы страницы с её собственного origin: скрипты (с модулями, которые они импортируют), стили и то, что они загружают (шрифты, картинки), а также страницу, по адресу которой приложение было открыто. Остальные картинки и данные — содержимое приложения, их SDK не трогает.</li>
+        <li>Для каждого файла — условный запрос (<code>fetch</code> с <code>cache: 'no-cache'</code>): изменившееся скачивается, остальное сервер подтверждает ответом «304 Not Modified».</li>
+        <li>Затем <code>location.reload()</code> — браузер переспрашивает и саму страницу. Медленный сервер не задерживает перезагрузку больше чем на 3 секунды: файл, на который он не успел ответить, может прийти из кеша.</li>
+      </ol>
+      <p>Свежие копии остаются в кеше, поэтому следующий запуск тоже будет свежим. Если у приложения есть service worker, на эти запросы отвечает он — так, как в нём написано.</p>
+      <div class="note">
+        <strong>Лучше всего — правильные заголовки</strong>
+        <p>Отдавайте HTML с <code>Cache-Control: no-cache</code>, а остальные файлы — под именами, которые меняются вместе с содержимым (так делают сборщики: <code>app.3f9c1a.js</code>). Тогда каждый запуск свежий сам по себе.</p>
+      </div>
+
+      <h3>Если приложение не отвечает</h3>
+      <p>Приложение без SDK или ещё не подключившееся (<code>init()</code>) tin.bar сразу открывает заново в новом фрейме, а не ответившее за секунду (старая копия SDK, зависшая страница) — через секунду. При «Обновить кэш» к адресу приложения добавляется <code>?tinReload=…</code>: такого адреса нет ни в одном кеше, и страница приходит с сервера. SDK убирает параметр из адреса страницы, как только загрузится, а в адресе tin.bar он не появляется.</p>
+    </section>
+
     <section id="errors">
       <h2>Ошибки</h2>
       <p>Все промисы SDK отклоняются объектом <code>Error</code> с полем <code>code</code>. Сообщение начинается с <code>Tin: </code>.</p>
@@ -596,11 +707,12 @@ backButton.onclick = () =&gt; history.back()</code></pre>
       <table>
         <thead><tr><th>method</th><th>params</th><th>Назначение</th></tr></thead>
         <tbody>
-          <tr><td><code>init</code></td><td><code>{ href, state? }</code></td><td>Подключение; <code>state</code> — что приложение уже хранит в записи страницы. Ответ — <code>{ app, user, theme, locale, initData, startParam, canGoBack }</code> и служебное <code>navigating: true</code>, если сразу за ним придёт <code>navigate</code> (пользователь прошёл по истории, пока приложение грузилось).</td></tr>
+          <tr><td><code>init</code></td><td><code>{ href, state? }</code></td><td>Подключение; <code>state</code> — что приложение уже хранит в записи страницы. Ответ — <code>{ app, user, theme, locale, initData, startParam, canGoBack, contentSafeAreaInset }</code> и служебное <code>navigating: true</code>, если сразу за ним придёт <code>navigate</code> (пользователь прошёл по истории, пока приложение грузилось).</td></tr>
           <tr><td><code>login</code></td><td>—</td><td>Открыть вход через кошелёк.</td></tr>
           <tr><td><code>open</code></td><td><code>{ id }</code></td><td>Открыть другое приложение.</td></tr>
           <tr><td><code>location</code></td><td><code>{ href, replace, state?, load? }</code></td><td>Адрес фрейма изменился: новая запись (<code>replace: false</code>) или замена текущей. <code>state</code> — состояние записи после <code>pushState</code>/<code>replaceState</code>. <code>load: true</code> — приложение начало загружать страницу по ссылке: tin.bar добавит запись, когда страница придёт (её <code>init</code> или <code>location</code> с этим адресом). Уходить со страницы стоит после ответа на это сообщение: сообщение от страницы, которой уже нет, приходит без <code>event.source</code>, и tin.bar его не примет.</td></tr>
           <tr><td><code>go</code></td><td><code>{ delta }</code></td><td>Переход по истории вкладки tin.bar.</td></tr>
+          <tr><td><code>reload</code></td><td>—</td><td>Ответ на событие <code>reload</code>: приложение перезагрузится само, создавать фрейм заново не нужно.</td></tr>
         </tbody>
       </table>
       </div>
@@ -609,7 +721,11 @@ backButton.onclick = () =&gt; history.back()</code></pre>
 <pre><code class="lang-js">{ tin: 1, id, result }                    // успешный ответ на запрос
 { tin: 1, id, error: { code, message } }  // ошибка
 { tin: 1, event, data }                   // событие</code></pre>
-      <p>События: <code>user</code>, <code>theme</code>, <code>locale</code>, <code>initData</code> (новая подпись приходит перед <code>user</code>), <code>canGoBack</code> и служебное <code>navigate</code>: <code>data</code> — адрес, который нужно показать во фрейме без новой записи в истории, <code>state</code> — что приложение хранило в этой записи.</p>
+      <p>События: <code>user</code>, <code>theme</code>, <code>locale</code>, <code>initData</code> (новая подпись приходит перед <code>user</code>), <code>canGoBack</code>, <code>contentSafeAreaInset</code> и служебные:</p>
+      <ul>
+        <li><code>navigate</code>: <code>data</code> — адрес, который нужно показать во фрейме без новой записи в истории, <code>state</code> — что приложение хранило в этой записи;</li>
+        <li><code>reload</code>: пользователь выбрал «Обновить» или «Обновить кэш», <code>data</code> — <code>{ refreshCache }</code>. От старого tin.bar приходит <code>null</code>: его единственное обновление шло мимо кеша.</li>
+      </ul>
     </section>
 
     <section id="security">
@@ -630,6 +746,10 @@ backButton.onclick = () =&gt; history.back()</code></pre>
       <p>Да, если сайт многостраничный: подключите SDK и вызовите <code>init()</code> на каждой странице — иначе её адрес не попадёт в tin.bar. В SPA достаточно одного вызова при старте.</p>
       <h3>Почему «назад» ничего не делает?</h3>
       <p>Скорее всего, запись в истории была создана до подключения <code>init()</code> или браузер не поддерживает Navigation API: такие записи принадлежат фрейму и пропадают при его перезагрузке. Вызывайте <code>init()</code> как можно раньше.</p>
+      <h3>После деплоя приложение показывает старую версию</h3>
+      <p>Браузер взял страницу или её скрипты из кеша. Пункт «Обновить кэш» в меню tin.bar (или <code>Tin.reload()</code>) загрузит их с сервера, а заголовки из раздела <a href="#cache">Обновление и кеш</a> избавят от этого насовсем.</p>
+      <h3>Что-то в приложении закрыто кнопками tin.bar</h3>
+      <p>Кнопки висят поверх приложения. Оставьте под ними место: <code>padding-top: var(--tin-content-safe-area-inset-top, 0px)</code> — подробнее в разделе <a href="#safe-area">Кнопки tin.bar</a>.</p>
       <h3>Как сделать ссылку на страницу приложения?</h3>
       <p><code>Tin.hostOrigin + '/' + Tin.app.id + '/путь'</code>. Внутри приложения используйте обычные относительные ссылки — SDK сам превратит их в записи истории tin.bar.</p>
     </section>
